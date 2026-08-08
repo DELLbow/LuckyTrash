@@ -12,11 +12,14 @@ namespace LuckyTrash.Controllers
 {
     /// <summary>
     /// GameScene に配置し、ゲーム進行全体を統括する開発用コントローラー。
-    /// 人数選択パネルで 2〜4人 を選ぶとその人数で GameSetup によりゲームを初期化し、
-    /// GameState を介してターンを進行しながら、座席の HandView と CenterArea の
-    /// ステータス表示・「次のターン」ボタンを繋ぐ。
-    /// ResultScene への遷移や GameManager シングルトン化は次のステップで対応する想定で、
-    /// ここでは GameScene 内で完結させている。
+    /// 「人数選択 → 開始プレイヤー決定 → ゲーム開始」の順で進行する。
+    /// 開始プレイヤーは、前回と同じ人数・同じ座席構成であれば <see cref="GameManager"/> に
+    /// 記録された前回の最下位座席から、そうでなければランダムに決定する（じゃんけんパネルは廃止）。
+    /// 選択後は GameSetup でゲームを初期化し、GameState を介してターンを進行しながら、
+    /// 座席の HandView と CenterArea のステータス表示・「次のターン」ボタンを繋ぐ。
+    /// ゲーム終了時には、次回の開始プレイヤー決定用に最下位座席を GameManager に記録し、
+    /// 簡易な「もう一度プレイ」ボタンで人数選択からやり直せるようにしている。
+    /// ResultScene への遷移は今回のスコープ外で、ここでは GameScene 内で完結させている。
     /// </summary>
     public class GameController : MonoBehaviour
     {
@@ -27,6 +30,7 @@ namespace LuckyTrash.Controllers
         [SerializeField] private HandView _leftHandView;
 
         [SerializeField] private Button _nextTurnButton;
+        [SerializeField] private Button _playAgainButton;
         [SerializeField] private TMP_Text _statusText;
 
         [Header("Player Count Selection")]
@@ -43,30 +47,55 @@ namespace LuckyTrash.Controllers
         {
             _allHandViews = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
 
-            // ゲーム開始前は全座席・「次のターン」ボタンを隠しておく。
-            SetActiveIfNotNull(_bottomHandView, false);
-            SetActiveIfNotNull(_rightHandView, false);
-            SetActiveIfNotNull(_topHandView, false);
-            SetActiveIfNotNull(_leftHandView, false);
-
             if (_nextTurnButton != null)
             {
                 _nextTurnButton.onClick.AddListener(OnNextTurnButtonClicked);
+            }
+
+            if (_playAgainButton != null)
+            {
+                _playAgainButton.onClick.AddListener(OnPlayAgainButtonClicked);
+            }
+
+            if (_twoPlayerButton != null) _twoPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(2));
+            if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => OnPlayerCountSelected(3));
+            if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(4));
+
+            ResetToPlayerCountSelection();
+        }
+
+        /// <summary>
+        /// 人数選択画面（初回起動時・「もう一度プレイ」時）の状態に戻す。
+        /// </summary>
+        private void ResetToPlayerCountSelection()
+        {
+            _gameState = null;
+
+            foreach (var handView in _allHandViews)
+            {
+                SetActiveIfNotNull(handView, false);
+            }
+
+            if (_nextTurnButton != null)
+            {
                 _nextTurnButton.gameObject.SetActive(false);
             }
 
-            if (_twoPlayerButton != null) _twoPlayerButton.onClick.AddListener(() => StartGame(2));
-            if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => StartGame(3));
-            if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => StartGame(4));
+            if (_playAgainButton != null)
+            {
+                _playAgainButton.gameObject.SetActive(false);
+            }
 
             ShowPlayerCountPanel(true);
             SetStatusText("プレイ人数を選択してください。");
         }
 
         /// <summary>
-        /// 人数選択パネルのボタンが押されたときに呼ばれる。選択された人数でゲームを初期化する。
+        /// 人数選択パネルのボタンが押されたときに呼ばれる。
+        /// 選択人数に応じた座席対応表を確定させ、開始プレイヤーを決定してゲームを開始する。
+        /// 前回と同じ人数・同じ座席構成なら前回の最下位座席から、そうでなければランダムに決定する。
         /// </summary>
-        private void StartGame(int playerCount)
+        private void OnPlayerCountSelected(int playerCount)
         {
             ShowPlayerCountPanel(false);
 
@@ -76,6 +105,28 @@ namespace LuckyTrash.Controllers
             //   4人: SeatIndex 0=Bottom, 1=Right, 2=Top, 3=Left
             _handViewsBySeat = GetSeatMapping(playerCount);
 
+            var seatIndices = Enumerable.Range(0, _handViewsBySeat.Length).ToArray();
+
+            int startingSeatIndex;
+            string startReason;
+            if (GameManager.Instance.TryGetStartingSeat(playerCount, seatIndices, out startingSeatIndex))
+            {
+                startReason = "（前回最下位だった座席から開始）";
+            }
+            else
+            {
+                startingSeatIndex = UnityEngine.Random.Range(0, seatIndices.Length);
+                startReason = "（開始プレイヤーをランダムに決定）";
+            }
+
+            BeginGame(playerCount, startingSeatIndex, startReason);
+        }
+
+        /// <summary>
+        /// 選択された人数・開始プレイヤーで実際にゲームを初期化して開始する。
+        /// </summary>
+        private void BeginGame(int playerCount, int startingSeatIndex, string startReason)
+        {
             // 使わない座席の HandView は非表示にする（空のコンテナが見えたままだと紛らわしいため）。
             foreach (var handView in _allHandViews)
             {
@@ -85,7 +136,7 @@ namespace LuckyTrash.Controllers
 
             var setupResult = GameSetup.SetUp(playerCount);
             var rouletteSelector = new RouletteSelector();
-            _gameState = new GameState(setupResult, rouletteSelector, startingSeatIndex: 0);
+            _gameState = new GameState(setupResult, rouletteSelector, startingSeatIndex);
 
             foreach (var player in _gameState.Players)
             {
@@ -98,7 +149,7 @@ namespace LuckyTrash.Controllers
                 _nextTurnButton.interactable = true;
             }
 
-            SetStatusText($"ゲーム開始（{playerCount}人）。「次のターン」を押して進行してください。");
+            SetStatusText($"ゲーム開始（{playerCount}人）。Player {startingSeatIndex} から開始します{startReason}。\n「次のターン」を押して進行してください。");
         }
 
         /// <summary>
@@ -140,9 +191,55 @@ namespace LuckyTrash.Controllers
             {
                 message += "\n\n" + BuildFinalRankingText();
                 SetButtonInteractable(false);
+
+                if (_nextTurnButton != null)
+                {
+                    _nextTurnButton.gameObject.SetActive(false);
+                }
+
+                // 残り1人になり自動的に最下位が確定した座席を、次回の開始プレイヤー決定用に記録する。
+                RecordGameResultForNextStart();
+
+                if (_playAgainButton != null)
+                {
+                    _playAgainButton.gameObject.SetActive(true);
+                }
             }
 
             SetStatusText(message);
+        }
+
+        /// <summary>
+        /// ゲーム終了時、最後まで手札を持っていた（自動的に最下位が確定した）プレイヤーの座席を、
+        /// 今回のプレイ人数・座席構成とあわせて GameManager に記録する。
+        /// </summary>
+        private void RecordGameResultForNextStart()
+        {
+            if (_gameState == null || _handViewsBySeat == null)
+            {
+                return;
+            }
+
+            var rankings = _gameState.Rankings;
+            if (rankings.Count == 0)
+            {
+                return;
+            }
+
+            // 最下位（最も大きい順位番号）＝残り1人になり自動的に確定したプレイヤー。
+            int lastPlaceSeatIndex = rankings[rankings.Count - 1].SeatIndex;
+            int playerCount = _handViewsBySeat.Length;
+            var seatIndices = Enumerable.Range(0, playerCount);
+
+            GameManager.Instance.RecordGameResult(playerCount, seatIndices, lastPlaceSeatIndex);
+        }
+
+        /// <summary>
+        /// 「もう一度プレイ」ボタンが押されたときに呼ばれる。人数選択画面に戻る。
+        /// </summary>
+        private void OnPlayAgainButtonClicked()
+        {
+            ResetToPlayerCountSelection();
         }
 
         private HandView GetHandView(int seatIndex)
