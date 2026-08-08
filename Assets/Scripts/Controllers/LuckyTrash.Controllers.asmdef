@@ -1,0 +1,20 @@
+{
+    "name": "LuckyTrash.Controllers",
+    "rootNamespace": "LuckyTrash.Controllers",
+    "references": [
+        "LuckyTrash.Cards",
+        "LuckyTrash.Game",
+        "LuckyTrash.UI",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
