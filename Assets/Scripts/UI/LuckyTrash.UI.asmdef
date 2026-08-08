@@ -3,6 +3,7 @@
     "rootNamespace": "LuckyTrash.UI",
     "references": [
         "LuckyTrash.Cards",
+        "LuckyTrash.Game",
         "UnityEngine.UI",
         "Unity.TextMeshPro"
     ],

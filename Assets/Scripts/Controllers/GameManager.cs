@@ -6,10 +6,13 @@ namespace LuckyTrash.Controllers
     /// <summary>
     /// シーンをまたいで保持する必要がある、直近のゲーム結果に関する最小限の情報を管理するシングルトン
     /// （<see cref="DontDestroyOnLoad(Object)"/>）。
-    /// 現時点では「次回ゲーム開始時に、前回と同じ人数・同じ座席構成であれば前回の最下位だった座席から
-    /// 開始する」という判定にのみ使用する。
-    /// ResultScene への順位データ受け渡し等は今回のスコープ外だが、将来同じシングルトンを
-    /// 拡張していく前提で、記録する情報は最小限に絞ってある。
+    /// 用途は以下の2つ:
+    /// 1. 「次回ゲーム開始時に、前回と同じ人数・同じ座席構成であれば前回の最下位だった座席から
+    ///    開始する」という判定（<see cref="TryGetStartingSeat"/>）。
+    /// 2. ResultScene での最終順位表示（<see cref="LastFinalRankingSeatIndices"/>）と、
+    ///    ResultScene の「もう一度プレイ」から GameScene に戻った際に人数選択をスキップして
+    ///    自動的にゲームを開始するためのクイック再開予約（<see cref="RequestQuickRestart"/> /
+    ///    <see cref="TryConsumeQuickRestart"/>）。
     /// </summary>
     public class GameManager : MonoBehaviour
     {
@@ -40,6 +43,15 @@ namespace LuckyTrash.Controllers
         private int _previousPlayerCount;
         private HashSet<int> _previousSeatIndices;
         private int _previousLastPlaceSeatIndex;
+        private List<int> _lastFinalRankingSeatIndices;
+
+        private bool _quickRestartPending;
+        private int _quickRestartPlayerCount;
+
+        /// <summary>
+        /// 直近ゲームの最終順位（座席インデックスのリスト、1位から順）。まだ記録が無ければ null。
+        /// </summary>
+        public IReadOnlyList<int> LastFinalRankingSeatIndices => _lastFinalRankingSeatIndices;
 
         private void Awake()
         {
@@ -55,16 +67,24 @@ namespace LuckyTrash.Controllers
 
         /// <summary>
         /// ゲーム終了時（残り1人になり自動的に最下位が確定したタイミング）に、
-        /// 次回の開始プレイヤー決定に使う最小限の情報を記録する。
+        /// 次回の開始プレイヤー決定・結果表示に使う情報を記録する。
         /// </summary>
         /// <param name="playerCount">今回のプレイ人数。</param>
         /// <param name="seatIndices">今回使用した座席インデックスの集合。</param>
         /// <param name="lastPlaceSeatIndex">最後まで手札を持っていた（自動的に最下位が確定した）プレイヤーの座席インデックス。</param>
-        public void RecordGameResult(int playerCount, IEnumerable<int> seatIndices, int lastPlaceSeatIndex)
+        /// <param name="finalRankingSeatIndices">最終順位（座席インデックスのリスト、1位から順）。</param>
+        public void RecordGameResult(
+            int playerCount,
+            IEnumerable<int> seatIndices,
+            int lastPlaceSeatIndex,
+            IReadOnlyList<int> finalRankingSeatIndices)
         {
             _previousPlayerCount = playerCount;
             _previousSeatIndices = new HashSet<int>(seatIndices);
             _previousLastPlaceSeatIndex = lastPlaceSeatIndex;
+            _lastFinalRankingSeatIndices = finalRankingSeatIndices != null
+                ? new List<int>(finalRankingSeatIndices)
+                : null;
             _hasPreviousGameRecord = true;
         }
 
@@ -77,7 +97,7 @@ namespace LuckyTrash.Controllers
         {
             startingSeatIndex = -1;
 
-            if (!_hasPreviousGameRecord || playerCount != _previousPlayerCount)
+            if (!_hasPreviousGameRecord || _previousSeatIndices == null || playerCount != _previousPlayerCount)
             {
                 return false;
             }
@@ -90,6 +110,46 @@ namespace LuckyTrash.Controllers
 
             startingSeatIndex = _previousLastPlaceSeatIndex;
             return true;
+        }
+
+        /// <summary>
+        /// 次に GameScene がロードされた際、人数選択をスキップして前回と同じ人数でゲームを
+        /// 自動的に開始するよう予約する。直近のゲーム結果が記録されていなければ何もしない。
+        /// </summary>
+        public void RequestQuickRestart()
+        {
+            if (!_hasPreviousGameRecord)
+            {
+                return;
+            }
+
+            _quickRestartPending = true;
+            _quickRestartPlayerCount = _previousPlayerCount;
+        }
+
+        /// <summary>
+        /// クイック再開の予約を明示的に取り消す（人数選択からやり直す場合に呼ぶ）。
+        /// </summary>
+        public void ClearQuickRestart()
+        {
+            _quickRestartPending = false;
+        }
+
+        /// <summary>
+        /// クイック再開の予約があれば人数を取得したうえで、その予約を消費（クリア）して true を返す。
+        /// 予約が無ければ false を返す。GameController の起動時に一度だけ呼ばれる想定。
+        /// </summary>
+        public bool TryConsumeQuickRestart(out int playerCount)
+        {
+            if (_quickRestartPending)
+            {
+                playerCount = _quickRestartPlayerCount;
+                _quickRestartPending = false;
+                return true;
+            }
+
+            playerCount = 0;
+            return false;
         }
     }
 }

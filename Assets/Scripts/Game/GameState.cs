@@ -84,6 +84,9 @@ namespace LuckyTrash.Game
         public IReadOnlyList<Player> Rankings =>
             Players.Where(p => p.Rank.HasValue).OrderBy(p => p.Rank.Value).ToList();
 
+        /// <summary>めくり札用デッキに現在残っているカードの枚数（UI表示用）。</summary>
+        public int FlipDeckCount => _flipDeck.Count;
+
         /// <summary>
         /// GameSetup の結果と RouletteSelector を受け取り、ゲーム状態を初期化する。
         /// </summary>
@@ -119,7 +122,12 @@ namespace LuckyTrash.Game
         }
 
         /// <summary>
-        /// 1ターン分の処理を行う。
+        /// 1ターン分の処理を、抽選・ドロー・判定を一括で行う。
+        /// 内部的には <see cref="SpinCategory"/> → <see cref="DrawReferenceCard"/> →
+        /// <see cref="ResolveTurn"/> の順に呼び出しているだけで、ロジック自体はこれらの
+        /// 分割前と完全に同一（乱数消費順も変わらない）。
+        /// UI側で「1枚引く」「ルーレットを回す」を別々のタイミング・演出で行いたい場合は、
+        /// この3メソッドを個別に呼び出せる。
         /// ゲームが既に終了している場合は <see cref="InvalidOperationException"/> を投げる。
         /// </summary>
         public TurnResult PlayTurn()
@@ -129,13 +137,40 @@ namespace LuckyTrash.Game
                 throw new InvalidOperationException("Cannot play a turn; the game has already ended.");
             }
 
-            // 1. 現在の手番プレイヤーを取得する。
-            var turnPlayer = CurrentPlayer;
+            var category = SpinCategory();
+            var (drawnCard, reconstituted) = DrawReferenceCard();
+            return ResolveTurn(category, drawnCard, reconstituted);
+        }
 
-            // 2. RouletteSelectorでカテゴリを抽選する。
-            var category = _rouletteSelector.Spin();
+        /// <summary>
+        /// RouletteSelectorでカテゴリを抽選する（PlayTurnの手順2に相当）。
+        /// ルーレットの回転演出は、結果としてどの扇形に止まるかを事前に知る必要があるため、
+        /// この抽選は演出の再生前に行う想定。
+        /// </summary>
+        public RouletteCategory SpinCategory()
+        {
+            if (IsGameOver)
+            {
+                throw new InvalidOperationException("Cannot spin the roulette; the game has already ended.");
+            }
 
-            // 3. めくり札用Deckから1枚引く。空の場合は捨て札置き場から再構築してから引く。
+            return _rouletteSelector.Spin();
+        }
+
+        /// <summary>
+        /// めくり札用Deckから1枚引く（PlayTurnの手順3〜4に相当）。
+        /// 空の場合は捨て札置き場から再構築してから引く。引いたカードは捨て札置き場に加える。
+        /// ドロー演出（山札→基準カードスロット）は、カードの中身が分からなくても再生できるため、
+        /// この処理は演出の再生後に呼び出す想定（演出完了後に実際の中身を確定させる）。
+        /// </summary>
+        /// <returns>引いたカードと、めくり札用デッキの再構築が発生したかどうか。</returns>
+        public (Card Card, bool Reconstituted) DrawReferenceCard()
+        {
+            if (IsGameOver)
+            {
+                throw new InvalidOperationException("Cannot draw a reference card; the game has already ended.");
+            }
+
             bool reconstituted = false;
             if (_flipDeck.IsEmpty)
             {
@@ -145,9 +180,30 @@ namespace LuckyTrash.Game
             }
 
             var drawnCard = _flipDeck.Draw();
-
-            // 4. 引いたカードは手札には加えず、捨て札置き場に加える。
             _discardPile.Add(drawnCard);
+
+            return (drawnCard, reconstituted);
+        }
+
+        /// <summary>
+        /// 既に確定しているカテゴリ・基準カードを使って、現在の手番プレイヤーの手札を判定し、
+        /// 捨て札処理・順位確定・ゲーム終了判定・手番送りまで行う（PlayTurnの手順5〜9に相当）。
+        /// 「1枚引く」「ルーレットを回す」の両方の演出が完了した後に、UI側から呼び出す想定。
+        /// </summary>
+        /// <param name="category"><see cref="SpinCategory"/> で得られたカテゴリ。</param>
+        /// <param name="drawnCard"><see cref="DrawReferenceCard"/> で得られた基準カード。</param>
+        /// <param name="flipDeckWasReconstituted">
+        /// <see cref="DrawReferenceCard"/> の戻り値の Reconstituted をそのまま渡す。
+        /// </param>
+        public TurnResult ResolveTurn(RouletteCategory category, Card drawnCard, bool flipDeckWasReconstituted)
+        {
+            if (IsGameOver)
+            {
+                throw new InvalidOperationException("Cannot resolve a turn; the game has already ended.");
+            }
+
+            // 1. 現在の手番プレイヤーを取得する。
+            var turnPlayer = CurrentPlayer;
 
             // 5. 手番プレイヤーの手札から条件を満たすカードを判定する。
             var discardTargets = HandDiscardEvaluator.Evaluate(turnPlayer.Hand, category, drawnCard);
@@ -191,7 +247,7 @@ namespace LuckyTrash.Game
 
             return new TurnResult(
                 turnPlayer, category, drawnCard, discardTargets, wasPass,
-                finishedPlayer, reconstituted, IsGameOver);
+                finishedPlayer, flipDeckWasReconstituted, IsGameOver);
         }
 
         private int NextRankToAssign()

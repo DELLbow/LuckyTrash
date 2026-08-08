@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using LuckyTrash.Cards;
@@ -6,6 +7,7 @@ using LuckyTrash.Game;
 using LuckyTrash.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace LuckyTrash.Controllers
@@ -14,24 +16,40 @@ namespace LuckyTrash.Controllers
     /// GameScene に配置し、ゲーム進行全体を統括する開発用コントローラー。
     /// 「人数選択 → 開始プレイヤー決定 → ゲーム開始」の順で進行する。
     /// 開始プレイヤーは、前回と同じ人数・同じ座席構成であれば <see cref="GameManager"/> に
-    /// 記録された前回の最下位座席から、そうでなければランダムに決定する（じゃんけんパネルは廃止）。
-    /// 選択後は GameSetup でゲームを初期化し、GameState を介してターンを進行しながら、
-    /// 座席の HandView と CenterArea のステータス表示・「次のターン」ボタンを繋ぐ。
-    /// ゲーム終了時には、次回の開始プレイヤー決定用に最下位座席を GameManager に記録し、
-    /// 簡易な「もう一度プレイ」ボタンで人数選択からやり直せるようにしている。
-    /// ResultScene への遷移は今回のスコープ外で、ここでは GameScene 内で完結させている。
+    /// 記録された前回の最下位座席から、そうでなければランダムに決定する。
+    /// 起動時に <see cref="GameManager.TryConsumeQuickRestart"/> で「クイック再開」の予約が
+    /// あれば、人数選択パネルを出さずに直前と同じ人数でそのままゲームを開始する
+    /// （ResultScene の「もう一度プレイ」から戻ってきた場合）。
+    ///
+    /// 1ターンは「1枚引く」「ルーレットを回す」の2ボタン制。プレイヤーはどちらを先に
+    /// 押してもよく、押した方のボタンはその場で非活性化される。両方のアクション（と、
+    /// それぞれの演出）が完了して初めて GameState.ResolveTurn() で実際の判定・手札更新を行い、
+    /// 結果ポップアップの登場〜退場が終わったら自動的に次のプレイヤーのターンへ進む。
+    /// ゲーム終了時には、最終順位・最下位座席を GameManager に記録したうえで
+    /// ResultScene へ遷移する（結果表示はここでは行わない）。
     /// </summary>
     public class GameController : MonoBehaviour
     {
+        private const string ResultSceneName = "ResultScene";
+
         // 4座席分の HandView（基本設計書3.2節: Bottom/Right/Top/Left）。
         [SerializeField] private HandView _bottomHandView;
         [SerializeField] private HandView _rightHandView;
         [SerializeField] private HandView _topHandView;
         [SerializeField] private HandView _leftHandView;
 
-        [SerializeField] private Button _nextTurnButton;
-        [SerializeField] private Button _playAgainButton;
+        [Header("Turn Actions")]
+        [SerializeField] private Button _drawCardButton;
+        [SerializeField] private Button _spinRouletteButton;
+        [SerializeField] private RouletteWheelView _rouletteWheelView;
+        [SerializeField] private ReferenceCardDrawView _referenceCardDrawView;
+        [SerializeField] private ResultPopupView _resultPopupView;
+        [SerializeField] private TMP_Text _deckCountText;
+
+        [Header("Debug")]
         [SerializeField] private TMP_Text _statusText;
+        [Tooltip("ONの場合のみ、「Player Xの番: マーク判定...」のような詳細な判定結果テキストを表示する。")]
+        [SerializeField] private bool _showDebugResultText = false;
 
         [Header("Player Count Selection")]
         [SerializeField] private GameObject _playerCountPanel;
@@ -43,55 +61,58 @@ namespace LuckyTrash.Controllers
         private HandView[] _allHandViews;
         private HandView[] _handViewsBySeat;
 
+        // 「1枚引く」「ルーレットを回す」それぞれの進行状況。両方 true になったら判定へ進む。
+        private bool _drawInProgress;
+        private bool _spinInProgress;
+        private bool _drawActionDone;
+        private bool _spinActionDone;
+        private bool _isResolvingTurn;
+
+        // 両アクション完了後に GameState.ResolveTurn() へ渡すための、確定済みの抽選結果。
+        private RouletteCategory _pendingCategory;
+        private Card _pendingDrawnCard;
+        private bool _pendingFlipDeckWasReconstituted;
+
         private void Start()
         {
             _allHandViews = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
-
-            if (_nextTurnButton != null)
-            {
-                _nextTurnButton.onClick.AddListener(OnNextTurnButtonClicked);
-            }
-
-            if (_playAgainButton != null)
-            {
-                _playAgainButton.onClick.AddListener(OnPlayAgainButtonClicked);
-            }
-
-            if (_twoPlayerButton != null) _twoPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(2));
-            if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => OnPlayerCountSelected(3));
-            if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(4));
-
-            ResetToPlayerCountSelection();
-        }
-
-        /// <summary>
-        /// 人数選択画面（初回起動時・「もう一度プレイ」時）の状態に戻す。
-        /// </summary>
-        private void ResetToPlayerCountSelection()
-        {
-            _gameState = null;
 
             foreach (var handView in _allHandViews)
             {
                 SetActiveIfNotNull(handView, false);
             }
 
-            if (_nextTurnButton != null)
+            if (_drawCardButton != null)
             {
-                _nextTurnButton.gameObject.SetActive(false);
+                _drawCardButton.onClick.AddListener(OnDrawCardButtonClicked);
+                _drawCardButton.gameObject.SetActive(false);
             }
 
-            if (_playAgainButton != null)
+            if (_spinRouletteButton != null)
             {
-                _playAgainButton.gameObject.SetActive(false);
+                _spinRouletteButton.onClick.AddListener(OnSpinRouletteButtonClicked);
+                _spinRouletteButton.gameObject.SetActive(false);
             }
 
-            ShowPlayerCountPanel(true);
-            SetStatusText("プレイ人数を選択してください。");
+            if (_twoPlayerButton != null) _twoPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(2));
+            if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => OnPlayerCountSelected(3));
+            if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(4));
+
+            if (GameManager.Instance.TryConsumeQuickRestart(out int quickRestartPlayerCount))
+            {
+                // ResultScene の「もう一度プレイ」から戻ってきた場合: 人数選択を経ずにそのまま開始する。
+                ShowPlayerCountPanel(false);
+                OnPlayerCountSelected(quickRestartPlayerCount);
+            }
+            else
+            {
+                ShowPlayerCountPanel(true);
+                SetStatusText("プレイ人数を選択してください。");
+            }
         }
 
         /// <summary>
-        /// 人数選択パネルのボタンが押されたときに呼ばれる。
+        /// 人数選択パネルのボタンが押されたとき、またはクイック再開時に呼ばれる。
         /// 選択人数に応じた座席対応表を確定させ、開始プレイヤーを決定してゲームを開始する。
         /// 前回と同じ人数・同じ座席構成なら前回の最下位座席から、そうでなければランダムに決定する。
         /// </summary>
@@ -143,13 +164,9 @@ namespace LuckyTrash.Controllers
                 GetHandView(player.SeatIndex)?.SetHand(player.Hand);
             }
 
-            if (_nextTurnButton != null)
-            {
-                _nextTurnButton.gameObject.SetActive(true);
-                _nextTurnButton.interactable = true;
-            }
+            SetStatusText($"ゲーム開始（{playerCount}人）。Player {startingSeatIndex} から開始します{startReason}。");
 
-            SetStatusText($"ゲーム開始（{playerCount}人）。Player {startingSeatIndex} から開始します{startReason}。\n「次のターン」を押して進行してください。");
+            StartNextTurn();
         }
 
         /// <summary>
@@ -173,45 +190,178 @@ namespace LuckyTrash.Controllers
             }
         }
 
-        private void OnNextTurnButtonClicked()
+        // --------------------------------------------------------------
+        // 「1枚引く」「ルーレットを回す」の2ボタン制。
+        // --------------------------------------------------------------
+
+        private void OnDrawCardButtonClicked()
         {
-            if (_gameState == null || _gameState.IsGameOver)
+            if (_gameState == null || _gameState.IsGameOver || _drawActionDone || _drawInProgress)
             {
                 return;
             }
 
-            var result = _gameState.PlayTurn();
+            _drawInProgress = true;
+            if (_drawCardButton != null)
+            {
+                _drawCardButton.interactable = false;
+            }
+
+            StartCoroutine(DrawCardRoutine());
+        }
+
+        /// <summary>
+        /// 「1枚引く」の演出（山札→基準カードスロットへのスライド+フリップ）を再生し、
+        /// 完了後に実際に GameState.DrawReferenceCard() を呼んでカードを確定・表示する。
+        /// </summary>
+        private IEnumerator DrawCardRoutine()
+        {
+            if (_referenceCardDrawView != null)
+            {
+                yield return StartCoroutine(_referenceCardDrawView.PlayDrawAnimation());
+            }
+
+            var (card, reconstituted) = _gameState.DrawReferenceCard();
+            _pendingDrawnCard = card;
+            _pendingFlipDeckWasReconstituted = reconstituted;
+
+            if (_referenceCardDrawView != null)
+            {
+                _referenceCardDrawView.ShowCard(card);
+            }
+
+            UpdateDeckCountLabel();
+
+            _drawActionDone = true;
+            TryResolveTurnIfBothActionsComplete();
+        }
+
+        private void OnSpinRouletteButtonClicked()
+        {
+            if (_gameState == null || _gameState.IsGameOver || _spinActionDone || _spinInProgress)
+            {
+                return;
+            }
+
+            _spinInProgress = true;
+            if (_spinRouletteButton != null)
+            {
+                _spinRouletteButton.interactable = false;
+            }
+
+            StartCoroutine(SpinRouletteRoutine());
+        }
+
+        /// <summary>
+        /// カテゴリを抽選してから（結果を先に確定させないと、どの扇形で止めればよいか分からないため）、
+        /// ルーレットの回転演出を再生する。
+        /// </summary>
+        private IEnumerator SpinRouletteRoutine()
+        {
+            _pendingCategory = _gameState.SpinCategory();
+
+            if (_rouletteWheelView != null)
+            {
+                yield return StartCoroutine(_rouletteWheelView.SpinTo(_pendingCategory));
+            }
+
+            _spinActionDone = true;
+            TryResolveTurnIfBothActionsComplete();
+        }
+
+        /// <summary>
+        /// 「1枚引く」「ルーレットを回す」の両方の演出が完了していれば、判定処理へ進む。
+        /// どちらか一方だけでは何もしない。
+        /// </summary>
+        private void TryResolveTurnIfBothActionsComplete()
+        {
+            if (!_drawActionDone || !_spinActionDone || _isResolvingTurn)
+            {
+                return;
+            }
+
+            _isResolvingTurn = true;
+            StartCoroutine(ResolveTurnRoutine());
+        }
+
+        /// <summary>
+        /// 両アクション完了後、実際の判定（GameState.ResolveTurn）を行い、結果ポップアップを
+        /// 表示してから、ゲーム終了なら ResultScene へ、そうでなければ次のプレイヤーのターンへ進む。
+        /// </summary>
+        private IEnumerator ResolveTurnRoutine()
+        {
+            var result = _gameState.ResolveTurn(_pendingCategory, _pendingDrawnCard, _pendingFlipDeckWasReconstituted);
 
             // 手札が変化するのは手番プレイヤーの座席のみなので、そこだけ更新すればよい。
             GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand);
 
-            var message = BuildTurnDescription(result);
-
-            if (_gameState.IsGameOver)
+            if (_statusText != null)
             {
-                message += "\n\n" + BuildFinalRankingText();
-                SetButtonInteractable(false);
-
-                if (_nextTurnButton != null)
-                {
-                    _nextTurnButton.gameObject.SetActive(false);
-                }
-
-                // 残り1人になり自動的に最下位が確定した座席を、次回の開始プレイヤー決定用に記録する。
-                RecordGameResultForNextStart();
-
-                if (_playAgainButton != null)
-                {
-                    _playAgainButton.gameObject.SetActive(true);
-                }
+                _statusText.text = _showDebugResultText ? BuildTurnDescription(result) : string.Empty;
             }
 
-            SetStatusText(message);
+            if (_resultPopupView != null)
+            {
+                yield return StartCoroutine(_resultPopupView.ShowResult(result.DiscardedCards.Count));
+            }
+
+            if (result.GameEnded)
+            {
+                // 残り1人になり自動的に最下位が確定した座席・最終順位を、
+                // 次回の開始プレイヤー決定・結果表示用に記録してから ResultScene へ遷移する。
+                RecordGameResultForNextStart();
+                SceneManager.LoadScene(ResultSceneName);
+                yield break;
+            }
+
+            StartNextTurn();
         }
 
         /// <summary>
-        /// ゲーム終了時、最後まで手札を持っていた（自動的に最下位が確定した）プレイヤーの座席を、
-        /// 今回のプレイ人数・座席構成とあわせて GameManager に記録する。
+        /// 次のプレイヤーのターンを始められる状態に戻す
+        /// （両ボタンの再有効化、基準カードスロットのクリア、山札枚数ラベル更新）。
+        /// </summary>
+        private void StartNextTurn()
+        {
+            _drawInProgress = false;
+            _spinInProgress = false;
+            _drawActionDone = false;
+            _spinActionDone = false;
+            _isResolvingTurn = false;
+
+            if (_referenceCardDrawView != null)
+            {
+                _referenceCardDrawView.ClearAndReset();
+            }
+
+            UpdateDeckCountLabel();
+            SetActionButtonsInteractable(true);
+
+            if (_drawCardButton != null) _drawCardButton.gameObject.SetActive(true);
+            if (_spinRouletteButton != null) _spinRouletteButton.gameObject.SetActive(true);
+        }
+
+        private void UpdateDeckCountLabel()
+        {
+            if (_deckCountText != null && _gameState != null)
+            {
+                _deckCountText.text = $"残り{_gameState.FlipDeckCount}枚";
+            }
+        }
+
+        private void SetActionButtonsInteractable(bool interactable)
+        {
+            if (_drawCardButton != null) _drawCardButton.interactable = interactable;
+            if (_spinRouletteButton != null) _spinRouletteButton.interactable = interactable;
+        }
+
+        // --------------------------------------------------------------
+        // ゲーム終了時の記録・共通ヘルパー。
+        // --------------------------------------------------------------
+
+        /// <summary>
+        /// ゲーム終了時、最後まで手札を持っていた（自動的に最下位が確定した）プレイヤーの座席と
+        /// 最終順位を、今回のプレイ人数・座席構成とあわせて GameManager に記録する。
         /// </summary>
         private void RecordGameResultForNextStart()
         {
@@ -230,16 +380,9 @@ namespace LuckyTrash.Controllers
             int lastPlaceSeatIndex = rankings[rankings.Count - 1].SeatIndex;
             int playerCount = _handViewsBySeat.Length;
             var seatIndices = Enumerable.Range(0, playerCount);
+            var finalRankingSeatIndices = rankings.Select(p => p.SeatIndex).ToList();
 
-            GameManager.Instance.RecordGameResult(playerCount, seatIndices, lastPlaceSeatIndex);
-        }
-
-        /// <summary>
-        /// 「もう一度プレイ」ボタンが押されたときに呼ばれる。人数選択画面に戻る。
-        /// </summary>
-        private void OnPlayAgainButtonClicked()
-        {
-            ResetToPlayerCountSelection();
+            GameManager.Instance.RecordGameResult(playerCount, seatIndices, lastPlaceSeatIndex, finalRankingSeatIndices);
         }
 
         private HandView GetHandView(int seatIndex)
@@ -284,17 +427,6 @@ namespace LuckyTrash.Controllers
             return sb.ToString();
         }
 
-        private string BuildFinalRankingText()
-        {
-            var sb = new StringBuilder("=== ゲーム終了 ===");
-            foreach (var player in _gameState.Rankings)
-            {
-                sb.Append('\n').Append(player.Rank).Append("位: Player ").Append(player.SeatIndex);
-            }
-
-            return sb.ToString();
-        }
-
         private static string CategoryToJapanese(RouletteCategory category)
         {
             switch (category)
@@ -315,14 +447,6 @@ namespace LuckyTrash.Controllers
             if (_statusText != null)
             {
                 _statusText.text = message;
-            }
-        }
-
-        private void SetButtonInteractable(bool interactable)
-        {
-            if (_nextTurnButton != null)
-            {
-                _nextTurnButton.interactable = interactable;
             }
         }
 

@@ -18,18 +18,61 @@ namespace LuckyTrash.UI
         private static readonly Color RedTextColor = new Color(0.80f, 0.05f, 0.05f);
         private static readonly Color BlackTextColor = Color.black;
 
+        // カード裏面のプレースホルダー色（新規アート素材は用意せず、背景色の切り替えで表現する）。
+        private static readonly Color BackColor = new Color(0.15f, 0.25f, 0.55f);
+        private static readonly Color FrontColor = Color.white;
+
         [SerializeField] private Image _background;
         [SerializeField] private TMP_Text _label;
 
         /// <summary>
-        /// カードの内容を受け取り、表示（テキストと文字色）を更新する。
+        /// カードの内容を受け取り、表示（背景・テキスト・文字色）を更新する（表向き）。
         /// </summary>
         public void SetCard(Card card)
         {
+            if (_background != null)
+            {
+                _background.color = FrontColor;
+            }
+
             if (_label != null)
             {
                 _label.text = FormatCardText(card);
                 _label.color = card.Color == CardColor.Red ? RedTextColor : BlackTextColor;
+            }
+        }
+
+        /// <summary>
+        /// カードを裏向き（中身が分からない状態）にする。基準カードのドロー演出などで、
+        /// まだ実際に引いたカードが確定していない間の表示に使う。
+        /// </summary>
+        public void SetFaceDown()
+        {
+            if (_background != null)
+            {
+                _background.color = BackColor;
+            }
+
+            if (_label != null)
+            {
+                _label.text = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 表向きだが中身が空のプレースホルダー状態にする（基準カードスロットの待機時や、
+        /// ドロー演出のフリップ後〜実際の中身確定までの一瞬に使う）。
+        /// </summary>
+        public void SetBlankFace()
+        {
+            if (_background != null)
+            {
+                _background.color = FrontColor;
+            }
+
+            if (_label != null)
+            {
+                _label.text = string.Empty;
             }
         }
 
