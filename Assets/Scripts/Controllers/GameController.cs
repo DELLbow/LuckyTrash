@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Text;
 using LuckyTrash.Cards;
@@ -11,16 +12,15 @@ namespace LuckyTrash.Controllers
 {
     /// <summary>
     /// GameScene に配置し、ゲーム進行全体を統括する開発用コントローラー。
-    /// GameSetup でゲームを初期化し、GameState を介してターンを進行しながら、
-    /// 4座席の HandView と CenterArea のステータス表示・「次のターン」ボタンを繋ぐ。
+    /// 人数選択パネルで 2〜4人 を選ぶとその人数で GameSetup によりゲームを初期化し、
+    /// GameState を介してターンを進行しながら、座席の HandView と CenterArea の
+    /// ステータス表示・「次のターン」ボタンを繋ぐ。
     /// ResultScene への遷移や GameManager シングルトン化は次のステップで対応する想定で、
     /// ここでは GameScene 内で完結させている。
     /// </summary>
     public class GameController : MonoBehaviour
     {
-        private const int PlayerCount = 4;
-
-        // 座席順（SeatIndex 0=Bottom, 1=Right, 2=Top, 3=Left、基本設計書3.2節）に対応する HandView。
+        // 4座席分の HandView（基本設計書3.2節: Bottom/Right/Top/Left）。
         [SerializeField] private HandView _bottomHandView;
         [SerializeField] private HandView _rightHandView;
         [SerializeField] private HandView _topHandView;
@@ -29,14 +29,61 @@ namespace LuckyTrash.Controllers
         [SerializeField] private Button _nextTurnButton;
         [SerializeField] private TMP_Text _statusText;
 
+        [Header("Player Count Selection")]
+        [SerializeField] private GameObject _playerCountPanel;
+        [SerializeField] private Button _twoPlayerButton;
+        [SerializeField] private Button _threePlayerButton;
+        [SerializeField] private Button _fourPlayerButton;
+
         private GameState _gameState;
+        private HandView[] _allHandViews;
         private HandView[] _handViewsBySeat;
 
         private void Start()
         {
-            _handViewsBySeat = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
+            _allHandViews = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
 
-            var setupResult = GameSetup.SetUp(PlayerCount);
+            // ゲーム開始前は全座席・「次のターン」ボタンを隠しておく。
+            SetActiveIfNotNull(_bottomHandView, false);
+            SetActiveIfNotNull(_rightHandView, false);
+            SetActiveIfNotNull(_topHandView, false);
+            SetActiveIfNotNull(_leftHandView, false);
+
+            if (_nextTurnButton != null)
+            {
+                _nextTurnButton.onClick.AddListener(OnNextTurnButtonClicked);
+                _nextTurnButton.gameObject.SetActive(false);
+            }
+
+            if (_twoPlayerButton != null) _twoPlayerButton.onClick.AddListener(() => StartGame(2));
+            if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => StartGame(3));
+            if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => StartGame(4));
+
+            ShowPlayerCountPanel(true);
+            SetStatusText("プレイ人数を選択してください。");
+        }
+
+        /// <summary>
+        /// 人数選択パネルのボタンが押されたときに呼ばれる。選択された人数でゲームを初期化する。
+        /// </summary>
+        private void StartGame(int playerCount)
+        {
+            ShowPlayerCountPanel(false);
+
+            // 人数ごとの座席対応（基本設計書3.2節、時計回りの手番順を維持する）:
+            //   2人: SeatIndex 0=Bottom, 1=Top（Right/Left は使わない）
+            //   3人: SeatIndex 0=Bottom, 1=Right, 2=Left（Top は使わない）
+            //   4人: SeatIndex 0=Bottom, 1=Right, 2=Top, 3=Left
+            _handViewsBySeat = GetSeatMapping(playerCount);
+
+            // 使わない座席の HandView は非表示にする（空のコンテナが見えたままだと紛らわしいため）。
+            foreach (var handView in _allHandViews)
+            {
+                bool isUsed = Array.IndexOf(_handViewsBySeat, handView) >= 0;
+                SetActiveIfNotNull(handView, isUsed);
+            }
+
+            var setupResult = GameSetup.SetUp(playerCount);
             var rouletteSelector = new RouletteSelector();
             _gameState = new GameState(setupResult, rouletteSelector, startingSeatIndex: 0);
 
@@ -47,10 +94,32 @@ namespace LuckyTrash.Controllers
 
             if (_nextTurnButton != null)
             {
-                _nextTurnButton.onClick.AddListener(OnNextTurnButtonClicked);
+                _nextTurnButton.gameObject.SetActive(true);
+                _nextTurnButton.interactable = true;
             }
 
-            SetStatusText("ゲーム開始（4人）。「次のターン」を押して進行してください。");
+            SetStatusText($"ゲーム開始（{playerCount}人）。「次のターン」を押して進行してください。");
+        }
+
+        /// <summary>
+        /// SeatIndex(0始まり) → HandView の対応表を、選択された人数に応じて構築する。
+        /// 配列の添字がそのまま SeatIndex に対応する。
+        /// </summary>
+        private HandView[] GetSeatMapping(int playerCount)
+        {
+            switch (playerCount)
+            {
+                case 2:
+                    // SeatIndex 0=Bottom, 1=Top（Right/Left は使わない）
+                    return new[] { _bottomHandView, _topHandView };
+                case 3:
+                    // SeatIndex 0=Bottom, 1=Right, 2=Left（Top は使わない）
+                    return new[] { _bottomHandView, _rightHandView, _leftHandView };
+                case 4:
+                default:
+                    // SeatIndex 0=Bottom, 1=Right, 2=Top, 3=Left
+                    return new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
+            }
         }
 
         private void OnNextTurnButtonClicked()
@@ -157,6 +226,22 @@ namespace LuckyTrash.Controllers
             if (_nextTurnButton != null)
             {
                 _nextTurnButton.interactable = interactable;
+            }
+        }
+
+        private void ShowPlayerCountPanel(bool show)
+        {
+            if (_playerCountPanel != null)
+            {
+                _playerCountPanel.SetActive(show);
+            }
+        }
+
+        private static void SetActiveIfNotNull(HandView handView, bool active)
+        {
+            if (handView != null)
+            {
+                handView.gameObject.SetActive(active);
             }
         }
     }
