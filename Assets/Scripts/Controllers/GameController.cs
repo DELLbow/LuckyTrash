@@ -25,17 +25,18 @@ namespace LuckyTrash.Controllers
     /// どちらの予約も無ければ、この GameScene 内蔵の人数選択パネルを表示する
     /// （TitleScene を経由しない開発時の直接起動などのフォールバック用）。
     ///
-    /// 1ターンは「1枚引く」「ルーレットを回す」の2ボタン制。プレイヤーはどちらを先に
-    /// 押してもよく、押した方のボタンはその場で非活性化される。両方のアクション（と、
-    /// それぞれの演出）が完了して初めて GameState.ResolveTurn() で実際の判定・手札更新を行い、
-    /// 結果ポップアップの登場〜退場が終わったら自動的に次のプレイヤーのターンへ進む。
-    /// ゲーム終了時には、最終順位・最下位座席を GameManager に記録したうえで
-    /// ResultScene へ遷移する（結果表示はここでは行わない）。
+    /// 1ターンは「ルーレットを回す」→「1枚引く」の順に固定された2段階制。ターン開始時は
+    /// 「ルーレットを回す」のみ表示・有効化されており、その演出が完了すると「ルーレットを回す」を
+    /// 隠して「1枚引く」を表示・有効化する。「1枚引く」の演出が完了すると両ボタンとも隠し、
+    /// GameState.ResolveTurn() で実際の判定・手札更新を行う。結果ポップアップの登場〜退場が
+    /// 終わったら自動的に次のプレイヤーのターンへ進む。ゲーム終了時には、最終順位・最下位座席を
+    /// GameManager に記録したうえで ResultScene へ遷移する（結果表示はここでは行わない）。
     ///
     /// 下座席（SeatIndex 0）は常に人間、それ以外はCPUとして扱う（CPU対戦、判断ロジックは持たない
     /// 演出上の自動化のみ）。CPUの手番になると「1枚引く」「ルーレットを回す」ボタンを非活性化し、
-    /// ランダムな順序・ランダムな待機（<see cref="_cpuActionDelayMin"/>〜<see cref="_cpuActionDelayMax"/>）
-    /// を挟みながら、既存の2アクションのコルーチンをそのまま自動実行する（演出・判定ロジックは無改変）。
+    /// 人間と同じ固定順（ルーレット→ドロー）で、各アクション前にランダムな待機
+    /// （<see cref="_cpuActionDelayMin"/>〜<see cref="_cpuActionDelayMax"/>）を挟みながら、
+    /// 既存の2アクションのコルーチンをそのまま自動実行する（演出・判定ロジックは無改変）。
     /// </summary>
     public class GameController : MonoBehaviour
     {
@@ -77,16 +78,23 @@ namespace LuckyTrash.Controllers
         [SerializeField] private Button _threePlayerButton;
         [SerializeField] private Button _fourPlayerButton;
 
+        /// <summary>
+        /// 1ターン内の進行段階（ルーレット待ち → ドロー待ち → 判定中）。
+        /// 「どちらを先に押したか」の分岐は不要になったため、単純な3段階の状態遷移で表現する。
+        /// </summary>
+        private enum TurnPhase
+        {
+            WaitingForSpin,
+            WaitingForDraw,
+            Resolving
+        }
+
         private GameState _gameState;
         private HandView[] _allHandViews;
         private HandView[] _handViewsBySeat;
 
-        // 「1枚引く」「ルーレットを回す」それぞれの進行状況。両方 true になったら判定へ進む。
-        private bool _drawInProgress;
-        private bool _spinInProgress;
-        private bool _drawActionDone;
-        private bool _spinActionDone;
-        private bool _isResolvingTurn;
+        private TurnPhase _turnPhase;
+        private bool _isHumanTurn;
 
         // 両アクション完了後に GameState.ResolveTurn() へ渡すための、確定済みの抽選結果。
         private RouletteCategory _pendingCategory;
@@ -221,17 +229,48 @@ namespace LuckyTrash.Controllers
         }
 
         // --------------------------------------------------------------
-        // 「1枚引く」「ルーレットを回す」の2ボタン制。
+        // 「ルーレットを回す」→「1枚引く」の順に固定された2段階制。
         // --------------------------------------------------------------
 
-        private void OnDrawCardButtonClicked()
+        private void OnSpinRouletteButtonClicked()
         {
-            if (_gameState == null || _gameState.IsGameOver || _drawActionDone || _drawInProgress)
+            if (_gameState == null || _gameState.IsGameOver || _turnPhase != TurnPhase.WaitingForSpin)
             {
                 return;
             }
 
-            _drawInProgress = true;
+            if (_spinRouletteButton != null)
+            {
+                _spinRouletteButton.interactable = false;
+            }
+
+            StartCoroutine(SpinRouletteRoutine());
+        }
+
+        /// <summary>
+        /// カテゴリを抽選してから（結果を先に確定させないと、どの扇形で止めればよいか分からないため）、
+        /// ルーレットの回転演出を再生する。完了後、「ルーレットを回す」を隠して「1枚引く」に切り替える。
+        /// </summary>
+        private IEnumerator SpinRouletteRoutine()
+        {
+            _pendingCategory = _gameState.SpinCategory();
+
+            if (_rouletteWheelView != null)
+            {
+                yield return StartCoroutine(_rouletteWheelView.SpinTo(_pendingCategory));
+            }
+
+            _turnPhase = TurnPhase.WaitingForDraw;
+            ShowDrawPhase();
+        }
+
+        private void OnDrawCardButtonClicked()
+        {
+            if (_gameState == null || _gameState.IsGameOver || _turnPhase != TurnPhase.WaitingForDraw)
+            {
+                return;
+            }
+
             if (_drawCardButton != null)
             {
                 _drawCardButton.interactable = false;
@@ -243,6 +282,7 @@ namespace LuckyTrash.Controllers
         /// <summary>
         /// 「1枚引く」の演出（山札→基準カードスロットへのスライド+フリップ）を再生し、
         /// 完了後に実際に GameState.DrawReferenceCard() を呼んでカードを確定・表示する。
+        /// 両ボタンを隠し、判定処理（ResolveTurnRoutine）を開始する。
         /// </summary>
         private IEnumerator DrawCardRoutine()
         {
@@ -262,55 +302,8 @@ namespace LuckyTrash.Controllers
 
             UpdateDeckCountLabel();
 
-            _drawActionDone = true;
-            TryResolveTurnIfBothActionsComplete();
-        }
-
-        private void OnSpinRouletteButtonClicked()
-        {
-            if (_gameState == null || _gameState.IsGameOver || _spinActionDone || _spinInProgress)
-            {
-                return;
-            }
-
-            _spinInProgress = true;
-            if (_spinRouletteButton != null)
-            {
-                _spinRouletteButton.interactable = false;
-            }
-
-            StartCoroutine(SpinRouletteRoutine());
-        }
-
-        /// <summary>
-        /// カテゴリを抽選してから（結果を先に確定させないと、どの扇形で止めればよいか分からないため）、
-        /// ルーレットの回転演出を再生する。
-        /// </summary>
-        private IEnumerator SpinRouletteRoutine()
-        {
-            _pendingCategory = _gameState.SpinCategory();
-
-            if (_rouletteWheelView != null)
-            {
-                yield return StartCoroutine(_rouletteWheelView.SpinTo(_pendingCategory));
-            }
-
-            _spinActionDone = true;
-            TryResolveTurnIfBothActionsComplete();
-        }
-
-        /// <summary>
-        /// 「1枚引く」「ルーレットを回す」の両方の演出が完了していれば、判定処理へ進む。
-        /// どちらか一方だけでは何もしない。
-        /// </summary>
-        private void TryResolveTurnIfBothActionsComplete()
-        {
-            if (!_drawActionDone || !_spinActionDone || _isResolvingTurn)
-            {
-                return;
-            }
-
-            _isResolvingTurn = true;
+            _turnPhase = TurnPhase.Resolving;
+            HideTurnActionButtons();
             StartCoroutine(ResolveTurnRoutine());
         }
 
@@ -349,16 +342,12 @@ namespace LuckyTrash.Controllers
 
         /// <summary>
         /// 次のプレイヤーのターンを始められる状態に戻す
-        /// （両ボタンの再有効化/非活性化、基準カードスロットのクリア、山札枚数ラベル更新、
+        /// （「ルーレットを回す」のみ表示・有効化、基準カードスロットのクリア、山札枚数ラベル更新、
         /// ターン表示更新）。手番が人間なら通常通り操作を待ち、CPUならCPU自動進行を開始する。
         /// </summary>
         private void StartNextTurn()
         {
-            _drawInProgress = false;
-            _spinInProgress = false;
-            _drawActionDone = false;
-            _spinActionDone = false;
-            _isResolvingTurn = false;
+            _turnPhase = TurnPhase.WaitingForSpin;
 
             if (_referenceCardDrawView != null)
             {
@@ -368,54 +357,79 @@ namespace LuckyTrash.Controllers
             UpdateDeckCountLabel();
             UpdateTurnIndicator();
 
-            if (_drawCardButton != null) _drawCardButton.gameObject.SetActive(true);
-            if (_spinRouletteButton != null) _spinRouletteButton.gameObject.SetActive(true);
-
-            bool isHumanTurn = _gameState != null
+            // 人間の手番のみボタンを操作可能にする。CPUの手番は非活性のまま自動進行させる。
+            _isHumanTurn = _gameState != null
                 && !_gameState.IsGameOver
                 && _gameState.CurrentPlayer != null
                 && _gameState.CurrentPlayer.IsHuman;
 
-            // 人間の手番のみボタンを操作可能にする。CPUの手番は非活性のまま自動進行させる。
-            SetActionButtonsInteractable(isHumanTurn);
+            ShowSpinPhase();
 
-            if (!isHumanTurn && _gameState != null && !_gameState.IsGameOver)
+            if (!_isHumanTurn && _gameState != null && !_gameState.IsGameOver)
             {
                 StartCoroutine(CpuTurnRoutine());
             }
         }
 
+        /// <summary>
+        /// 「ルーレットを回す」のみ表示・有効化し、「1枚引く」を隠す（ターン開始時の状態）。
+        /// </summary>
+        private void ShowSpinPhase()
+        {
+            if (_spinRouletteButton != null)
+            {
+                _spinRouletteButton.gameObject.SetActive(true);
+                _spinRouletteButton.interactable = _isHumanTurn;
+            }
+
+            if (_drawCardButton != null)
+            {
+                _drawCardButton.gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// 「1枚引く」のみ表示・有効化し、「ルーレットを回す」を隠す（ルーレット完了後の状態）。
+        /// </summary>
+        private void ShowDrawPhase()
+        {
+            if (_spinRouletteButton != null)
+            {
+                _spinRouletteButton.gameObject.SetActive(false);
+            }
+
+            if (_drawCardButton != null)
+            {
+                _drawCardButton.gameObject.SetActive(true);
+                _drawCardButton.interactable = _isHumanTurn;
+            }
+        }
+
+        /// <summary>
+        /// 両ボタンとも隠す（ドロー完了〜判定処理中の状態）。
+        /// </summary>
+        private void HideTurnActionButtons()
+        {
+            if (_spinRouletteButton != null) _spinRouletteButton.gameObject.SetActive(false);
+            if (_drawCardButton != null) _drawCardButton.gameObject.SetActive(false);
+        }
+
         // --------------------------------------------------------------
-        // CPUターンの自動進行。判断ロジックは持たず、既存の2アクションのコルーチンを
-        // ランダムな順序・ランダムな待機を挟んで自動実行するだけの演出。
+        // CPUターンの自動進行。判断ロジックは持たず、人間と同じ固定順（ルーレット→ドロー）で
+        // 既存の2アクションのコルーチンをランダムな待機を挟んで自動実行するだけの演出。
         // --------------------------------------------------------------
 
         /// <summary>
-        /// CPUの手番を自動進行する。先にドローするかルーレットを回すかはランダムに決め、
-        /// それぞれの前にランダムな待機を挟んでから、既存の演出付きコルーチンをそのまま実行する。
-        /// 結果への影響は無く、実行順自体に意味は無い。
+        /// CPUの手番を自動進行する。ルーレット→ドローの固定順で、それぞれの前にランダムな
+        /// 待機を挟んでから、既存の演出付きコルーチンをそのまま実行する。
         /// </summary>
         private IEnumerator CpuTurnRoutine()
         {
-            bool drawFirst = UnityEngine.Random.value < 0.5f;
-
             yield return StartCoroutine(WaitRandomCpuDelay());
-            yield return StartCoroutine(drawFirst ? RunCpuDraw() : RunCpuSpin());
-
-            yield return StartCoroutine(WaitRandomCpuDelay());
-            yield return StartCoroutine(drawFirst ? RunCpuSpin() : RunCpuDraw());
-        }
-
-        private IEnumerator RunCpuDraw()
-        {
-            _drawInProgress = true;
-            yield return StartCoroutine(DrawCardRoutine());
-        }
-
-        private IEnumerator RunCpuSpin()
-        {
-            _spinInProgress = true;
             yield return StartCoroutine(SpinRouletteRoutine());
+
+            yield return StartCoroutine(WaitRandomCpuDelay());
+            yield return StartCoroutine(DrawCardRoutine());
         }
 
         private IEnumerator WaitRandomCpuDelay()
@@ -451,12 +465,6 @@ namespace LuckyTrash.Controllers
             {
                 _deckCountText.text = $"残り{_gameState.FlipDeckCount}枚";
             }
-        }
-
-        private void SetActionButtonsInteractable(bool interactable)
-        {
-            if (_drawCardButton != null) _drawCardButton.interactable = interactable;
-            if (_spinRouletteButton != null) _spinRouletteButton.interactable = interactable;
         }
 
         // --------------------------------------------------------------
