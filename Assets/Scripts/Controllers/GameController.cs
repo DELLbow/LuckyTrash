@@ -31,10 +31,16 @@ namespace LuckyTrash.Controllers
     /// 結果ポップアップの登場〜退場が終わったら自動的に次のプレイヤーのターンへ進む。
     /// ゲーム終了時には、最終順位・最下位座席を GameManager に記録したうえで
     /// ResultScene へ遷移する（結果表示はここでは行わない）。
+    ///
+    /// 下座席（SeatIndex 0）は常に人間、それ以外はCPUとして扱う（CPU対戦、判断ロジックは持たない
+    /// 演出上の自動化のみ）。CPUの手番になると「1枚引く」「ルーレットを回す」ボタンを非活性化し、
+    /// ランダムな順序・ランダムな待機（<see cref="_cpuActionDelayMin"/>〜<see cref="_cpuActionDelayMax"/>）
+    /// を挟みながら、既存の2アクションのコルーチンをそのまま自動実行する（演出・判定ロジックは無改変）。
     /// </summary>
     public class GameController : MonoBehaviour
     {
         private const string ResultSceneName = "ResultScene";
+        private const int HumanSeatIndex = 0;
 
         // 4座席分の HandView（基本設計書3.2節: Bottom/Right/Top/Left）。
         [SerializeField] private HandView _bottomHandView;
@@ -54,6 +60,16 @@ namespace LuckyTrash.Controllers
         [SerializeField] private TMP_Text _statusText;
         [Tooltip("ONの場合のみ、「Player Xの番: マーク判定...」のような詳細な判定結果テキストを表示する。")]
         [SerializeField] private bool _showDebugResultText = false;
+
+        [Header("Turn Indicator")]
+        [Tooltip("「CPU 2の番です」のような、現在の手番プレイヤーを示す常時表示。")]
+        [SerializeField] private TMP_Text _turnIndicatorText;
+
+        [Header("CPU Turn")]
+        [Tooltip("CPUの手番で、1つ目のアクションを実行するまでのランダム待機時間（秒）の最小値。")]
+        [SerializeField] private float _cpuActionDelayMin = 0.5f;
+        [Tooltip("CPUの手番で、各アクションを実行するまでのランダム待機時間（秒）の最大値。")]
+        [SerializeField] private float _cpuActionDelayMax = 1f;
 
         [Header("Player Count Selection")]
         [SerializeField] private GameObject _playerCountPanel;
@@ -166,16 +182,19 @@ namespace LuckyTrash.Controllers
                 SetActiveIfNotNull(handView, isUsed);
             }
 
-            var setupResult = GameSetup.SetUp(playerCount);
+            string humanDisplayName = NameInputPopupView.LoadPlayerName();
+            var setupResult = GameSetup.SetUp(playerCount, humanSeatIndex: HumanSeatIndex, humanDisplayName: humanDisplayName);
             var rouletteSelector = new RouletteSelector();
             _gameState = new GameState(setupResult, rouletteSelector, startingSeatIndex);
 
             foreach (var player in _gameState.Players)
             {
-                GetHandView(player.SeatIndex)?.SetHand(player.Hand);
+                var handView = GetHandView(player.SeatIndex);
+                handView?.SetHand(player.Hand, faceDown: !player.IsHuman);
+                handView?.SetPlayerLabel(GetDisplayName(player));
             }
 
-            SetStatusText($"ゲーム開始（{playerCount}人）。Player {startingSeatIndex} から開始します{startReason}。");
+            SetStatusText($"ゲーム開始（{playerCount}人）。{GetDisplayName(_gameState.CurrentPlayer)} から開始します{startReason}。");
 
             StartNextTurn();
         }
@@ -304,7 +323,7 @@ namespace LuckyTrash.Controllers
             var result = _gameState.ResolveTurn(_pendingCategory, _pendingDrawnCard, _pendingFlipDeckWasReconstituted);
 
             // 手札が変化するのは手番プレイヤーの座席のみなので、そこだけ更新すればよい。
-            GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand);
+            GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand, faceDown: !result.TurnPlayer.IsHuman);
 
             if (_statusText != null)
             {
@@ -330,7 +349,8 @@ namespace LuckyTrash.Controllers
 
         /// <summary>
         /// 次のプレイヤーのターンを始められる状態に戻す
-        /// （両ボタンの再有効化、基準カードスロットのクリア、山札枚数ラベル更新）。
+        /// （両ボタンの再有効化/非活性化、基準カードスロットのクリア、山札枚数ラベル更新、
+        /// ターン表示更新）。手番が人間なら通常通り操作を待ち、CPUならCPU自動進行を開始する。
         /// </summary>
         private void StartNextTurn()
         {
@@ -346,10 +366,83 @@ namespace LuckyTrash.Controllers
             }
 
             UpdateDeckCountLabel();
-            SetActionButtonsInteractable(true);
+            UpdateTurnIndicator();
 
             if (_drawCardButton != null) _drawCardButton.gameObject.SetActive(true);
             if (_spinRouletteButton != null) _spinRouletteButton.gameObject.SetActive(true);
+
+            bool isHumanTurn = _gameState != null
+                && !_gameState.IsGameOver
+                && _gameState.CurrentPlayer != null
+                && _gameState.CurrentPlayer.IsHuman;
+
+            // 人間の手番のみボタンを操作可能にする。CPUの手番は非活性のまま自動進行させる。
+            SetActionButtonsInteractable(isHumanTurn);
+
+            if (!isHumanTurn && _gameState != null && !_gameState.IsGameOver)
+            {
+                StartCoroutine(CpuTurnRoutine());
+            }
+        }
+
+        // --------------------------------------------------------------
+        // CPUターンの自動進行。判断ロジックは持たず、既存の2アクションのコルーチンを
+        // ランダムな順序・ランダムな待機を挟んで自動実行するだけの演出。
+        // --------------------------------------------------------------
+
+        /// <summary>
+        /// CPUの手番を自動進行する。先にドローするかルーレットを回すかはランダムに決め、
+        /// それぞれの前にランダムな待機を挟んでから、既存の演出付きコルーチンをそのまま実行する。
+        /// 結果への影響は無く、実行順自体に意味は無い。
+        /// </summary>
+        private IEnumerator CpuTurnRoutine()
+        {
+            bool drawFirst = UnityEngine.Random.value < 0.5f;
+
+            yield return StartCoroutine(WaitRandomCpuDelay());
+            yield return StartCoroutine(drawFirst ? RunCpuDraw() : RunCpuSpin());
+
+            yield return StartCoroutine(WaitRandomCpuDelay());
+            yield return StartCoroutine(drawFirst ? RunCpuSpin() : RunCpuDraw());
+        }
+
+        private IEnumerator RunCpuDraw()
+        {
+            _drawInProgress = true;
+            yield return StartCoroutine(DrawCardRoutine());
+        }
+
+        private IEnumerator RunCpuSpin()
+        {
+            _spinInProgress = true;
+            yield return StartCoroutine(SpinRouletteRoutine());
+        }
+
+        private IEnumerator WaitRandomCpuDelay()
+        {
+            float delay = UnityEngine.Random.Range(_cpuActionDelayMin, _cpuActionDelayMax);
+            yield return new WaitForSeconds(delay);
+        }
+
+        /// <summary>
+        /// 「CPU 2の番です」のような、現在の手番プレイヤーを示す常時表示を更新する。
+        /// </summary>
+        private void UpdateTurnIndicator()
+        {
+            if (_turnIndicatorText == null || _gameState == null || _gameState.CurrentPlayer == null)
+            {
+                return;
+            }
+
+            _turnIndicatorText.text = $"{GetDisplayName(_gameState.CurrentPlayer)}の番です";
+        }
+
+        /// <summary>
+        /// プレイヤーの表示名を取得する（<see cref="Player.DisplayName"/> が未設定の場合のフォールバック付き）。
+        /// </summary>
+        private static string GetDisplayName(Player player)
+        {
+            return !string.IsNullOrEmpty(player.DisplayName) ? player.DisplayName : $"Player {player.SeatIndex}";
         }
 
         private void UpdateDeckCountLabel()
@@ -409,7 +502,7 @@ namespace LuckyTrash.Controllers
         private static string BuildTurnDescription(TurnResult result)
         {
             var sb = new StringBuilder();
-            sb.Append("Player ").Append(result.TurnPlayer.SeatIndex).Append("の番: ")
+            sb.Append(GetDisplayName(result.TurnPlayer)).Append("の番: ")
               .Append(CategoryToJapanese(result.Category)).Append("判定、基準カード")
               .Append(CardView.FormatCardText(result.DrawnCard));
 
@@ -431,7 +524,7 @@ namespace LuckyTrash.Controllers
 
             if (result.FinishedPlayer != null)
             {
-                sb.Append("\nPlayer ").Append(result.FinishedPlayer.SeatIndex)
+                sb.Append('\n').Append(GetDisplayName(result.FinishedPlayer))
                   .Append(" が ").Append(result.FinishedPlayer.Rank).Append("位 であがりました！");
             }
 

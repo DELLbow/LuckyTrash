@@ -34,6 +34,18 @@ namespace LuckyTrash.Game
         public SeatPosition SeatPosition => (SeatPosition)SeatIndex;
 
         /// <summary>
+        /// 人間が操作する座席かどうか。CPU対戦では下座席(SeatIndex 0)のみ true、他は false になる。
+        /// <see cref="SetIdentity"/> を呼ばない限り既定値は true（既存の完全ホットシート用途との互換性のため）。
+        /// </summary>
+        public bool IsHuman { get; private set; } = true;
+
+        /// <summary>
+        /// 表示名。人間はTitleSceneで保存された名前（未設定時は「Player」）、
+        /// CPUは「CPU 1」のように座席順の連番。<see cref="SetIdentity"/> を呼ばない限り null。
+        /// </summary>
+        public string DisplayName { get; private set; }
+
+        /// <summary>
         /// 現在の手札。外部からは読み取り専用として見える。
         /// </summary>
         public IReadOnlyList<Card> Hand => _hand;
@@ -57,6 +69,15 @@ namespace LuckyTrash.Game
             }
 
             SeatIndex = seatIndex;
+        }
+
+        /// <summary>
+        /// 人間/CPUの区別と表示名を設定する。<see cref="GameSetup.SetUp"/> がセットアップ時に一度だけ呼ぶ想定。
+        /// </summary>
+        public void SetIdentity(bool isHuman, string displayName)
+        {
+            IsHuman = isHuman;
+            DisplayName = displayName;
         }
 
         /// <summary>

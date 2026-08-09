@@ -1,4 +1,5 @@
 using System.Text;
+using LuckyTrash.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,7 +10,11 @@ namespace LuckyTrash.Controllers
     /// <summary>
     /// ResultScene に配置し、直近ゲームの最終順位を表示するコントローラー。
     /// GameManager に記録された最終順位データ（座席インデックスのリスト、1位から順）を読み込んで、
-    /// GameScene での表示と同等のフォーマット（「1位: Player X」〜）で表示する。
+    /// 表示名（下座席=人間はTitleSceneで保存された名前、他の座席=CPU対戦の「CPU 1」等）で
+    /// 順位を表示する。座席インデックスから表示名を復元する規則は GameSetup と同じ
+    /// （SeatIndex 0 が人間、それ以外は座席順に「CPU 座席番号」）で、GameState 自体は
+    /// シーン遷移で失われるため GameManager には座席インデックスのみを保持させ、
+    /// ここではその規則から表示名を再構築する。
     /// 「もう一度プレイ」は GameManager にクイック再開を予約したうえで GameScene へ遷移し
     /// （人数選択をスキップして前回と同じ人数で自動開始される）、
     /// 「人数選択やり直し」はクイック再開の予約を明示的にクリアしたうえで TitleScene へ遷移する
@@ -19,6 +24,7 @@ namespace LuckyTrash.Controllers
     {
         private const string GameSceneName = "GameScene";
         private const string TitleSceneName = "TitleScene";
+        private const int HumanSeatIndex = 0;
 
         [SerializeField] private TMP_Text _rankingText;
         [SerializeField] private Button _playAgainButton;
@@ -57,10 +63,21 @@ namespace LuckyTrash.Controllers
             for (int i = 0; i < rankingSeatIndices.Count; i++)
             {
                 int rank = i + 1;
-                sb.Append('\n').Append(rank).Append("位: Player ").Append(rankingSeatIndices[i]);
+                sb.Append('\n').Append(rank).Append("位: ").Append(GetDisplayName(rankingSeatIndices[i]));
             }
 
             _rankingText.text = sb.ToString();
+        }
+
+        /// <summary>
+        /// 座席インデックスから表示名を復元する。SeatIndex 0（下座席）は人間としてTitleSceneの
+        /// 保存名を、それ以外はCPU対戦の座席番号に対応する「CPU N」を返す（GameSetupと同じ規則）。
+        /// </summary>
+        private static string GetDisplayName(int seatIndex)
+        {
+            return seatIndex == HumanSeatIndex
+                ? NameInputPopupView.LoadPlayerName()
+                : $"CPU {seatIndex}";
         }
 
         /// <summary>

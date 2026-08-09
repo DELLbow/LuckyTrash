@@ -87,5 +87,36 @@ namespace LuckyTrash.Game.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new Player(-1));
         }
+
+        [Test]
+        public void NewPlayer_BeforeSetIdentity_DefaultsToHuman_WithNullDisplayName()
+        {
+            var player = new Player(0);
+
+            Assert.IsTrue(player.IsHuman, "SetIdentityを呼ぶまでは既存の完全ホットシート用途との互換性のためIsHuman=trueが既定。");
+            Assert.IsNull(player.DisplayName);
+        }
+
+        [Test]
+        public void SetIdentity_Human_SetsIsHumanTrue_AndDisplayName()
+        {
+            var player = new Player(0);
+
+            player.SetIdentity(true, "ヒロキ");
+
+            Assert.IsTrue(player.IsHuman);
+            Assert.AreEqual("ヒロキ", player.DisplayName);
+        }
+
+        [Test]
+        public void SetIdentity_Cpu_SetsIsHumanFalse_AndDisplayName()
+        {
+            var player = new Player(1);
+
+            player.SetIdentity(false, "CPU 1");
+
+            Assert.IsFalse(player.IsHuman);
+            Assert.AreEqual("CPU 1", player.DisplayName);
+        }
     }
 }

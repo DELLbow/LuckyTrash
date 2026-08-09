@@ -88,5 +88,65 @@ namespace LuckyTrash.Game.Tests
                 Assert.AreEqual(GameSetup.InitialHandSize, player.Hand.Count);
             }
         }
+
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        public void SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(int playerCount)
+        {
+            var result = GameSetup.SetUp(playerCount, new Random(1));
+
+            Assert.IsTrue(result.Players[0].IsHuman, "既定では下座席(SeatIndex 0)が人間であること。");
+
+            int expectedCpuNumber = 1;
+            for (int seat = 1; seat < playerCount; seat++)
+            {
+                Assert.IsFalse(result.Players[seat].IsHuman, $"SeatIndex {seat} はCPUであること。");
+                Assert.AreEqual($"CPU {expectedCpuNumber}", result.Players[seat].DisplayName,
+                    "CPUは座席順に連番(CPU 1, CPU 2, ...)が振られること。");
+                expectedCpuNumber++;
+            }
+        }
+
+        [Test]
+        public void SetUp_HumanDisplayName_IsUsedForHumanSeat()
+        {
+            var result = GameSetup.SetUp(3, new Random(1), humanSeatIndex: 0, humanDisplayName: "ヒロキ");
+
+            Assert.AreEqual("ヒロキ", result.Players[0].DisplayName);
+        }
+
+        [Test]
+        public void SetUp_NullOrEmptyHumanDisplayName_DefaultsToPlayer()
+        {
+            var result = GameSetup.SetUp(2, new Random(1), humanSeatIndex: 0, humanDisplayName: null);
+
+            Assert.AreEqual("Player", result.Players[0].DisplayName);
+        }
+
+        [Test]
+        public void SetUp_CustomHumanSeatIndex_OnlyThatSeatIsHuman()
+        {
+            var result = GameSetup.SetUp(4, new Random(1), humanSeatIndex: 2, humanDisplayName: "ヒロキ");
+
+            Assert.IsFalse(result.Players[0].IsHuman);
+            Assert.IsFalse(result.Players[1].IsHuman);
+            Assert.IsTrue(result.Players[2].IsHuman);
+            Assert.AreEqual("ヒロキ", result.Players[2].DisplayName);
+            Assert.IsFalse(result.Players[3].IsHuman);
+
+            // 人間の座席をスキップして、CPUの座席順に連番が振られること。
+            Assert.AreEqual("CPU 1", result.Players[0].DisplayName);
+            Assert.AreEqual("CPU 2", result.Players[1].DisplayName);
+            Assert.AreEqual("CPU 3", result.Players[3].DisplayName);
+        }
+
+        [TestCase(-1)]
+        [TestCase(4)]
+        public void SetUp_HumanSeatIndexOutOfRange_Throws(int humanSeatIndex)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => GameSetup.SetUp(4, new Random(1), humanSeatIndex: humanSeatIndex));
+        }
     }
 }

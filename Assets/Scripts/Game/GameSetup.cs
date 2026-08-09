@@ -41,8 +41,16 @@ namespace LuckyTrash.Game
         /// シャッフルに使用する乱数生成器。省略時は既定の System.Random を使用する。
         /// テストで結果を固定したい場合はシード付きの Random を渡す。
         /// </param>
+        /// <param name="humanSeatIndex">
+        /// 人間が操作する座席番号。CPU対戦では常に下座席（0）を人間とする運用のため既定値は0。
+        /// 範囲外の場合は例外を投げる。
+        /// </param>
+        /// <param name="humanDisplayName">
+        /// 人間の表示名（TitleSceneでPlayerPrefsに保存された名前を渡す想定）。null/空の場合は「Player」。
+        /// </param>
         /// <returns>生成された Player のリストと、めくり札用デッキ。</returns>
-        public static GameSetupResult SetUp(int playerCount, Random random = null)
+        public static GameSetupResult SetUp(
+            int playerCount, Random random = null, int humanSeatIndex = 0, string humanDisplayName = null)
         {
             if (playerCount < MinPlayerCount || playerCount > MaxPlayerCount)
             {
@@ -51,13 +59,37 @@ namespace LuckyTrash.Game
                     $"Player count must be between {MinPlayerCount} and {MaxPlayerCount}.");
             }
 
+            if (humanSeatIndex < 0 || humanSeatIndex >= playerCount)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(humanSeatIndex), humanSeatIndex,
+                    $"Human seat index must be between 0 and {playerCount - 1}.");
+            }
+
             var rng = random ?? new Random();
 
             // 座席順（下辺→右辺→上辺→左辺、SeatIndex 0始まり）に Player を生成する。
+            // 人間の座席以外はすべてCPUとし、座席順に「CPU 1」「CPU 2」…と連番を振る。
+            string resolvedHumanName = string.IsNullOrEmpty(humanDisplayName) ? "Player" : humanDisplayName;
             var players = new List<Player>(playerCount);
+            int cpuNumber = 0;
             for (int seat = 0; seat < playerCount; seat++)
             {
-                players.Add(new Player(seat));
+                var player = new Player(seat);
+                bool isHuman = seat == humanSeatIndex;
+                string displayName;
+                if (isHuman)
+                {
+                    displayName = resolvedHumanName;
+                }
+                else
+                {
+                    cpuNumber++;
+                    displayName = $"CPU {cpuNumber}";
+                }
+
+                player.SetIdentity(isHuman, displayName);
+                players.Add(player);
             }
 
             // 手札配布用デッキ: シャッフルして各 Player に6枚ずつ配る。
