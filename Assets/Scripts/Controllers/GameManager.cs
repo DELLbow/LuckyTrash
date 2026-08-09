@@ -6,13 +6,17 @@ namespace LuckyTrash.Controllers
     /// <summary>
     /// シーンをまたいで保持する必要がある、直近のゲーム結果に関する最小限の情報を管理するシングルトン
     /// （<see cref="DontDestroyOnLoad(Object)"/>）。
-    /// 用途は以下の2つ:
+    /// 用途は以下の3つ:
     /// 1. 「次回ゲーム開始時に、前回と同じ人数・同じ座席構成であれば前回の最下位だった座席から
     ///    開始する」という判定（<see cref="TryGetStartingSeat"/>）。
     /// 2. ResultScene での最終順位表示（<see cref="LastFinalRankingSeatIndices"/>）と、
     ///    ResultScene の「もう一度プレイ」から GameScene に戻った際に人数選択をスキップして
     ///    自動的にゲームを開始するためのクイック再開予約（<see cref="RequestQuickRestart"/> /
     ///    <see cref="TryConsumeQuickRestart"/>）。
+    /// 3. TitleScene の人数選択ポップアップで選ばれた人数を GameScene に引き渡すための
+    ///    リクエスト予約（<see cref="RequestPlayerCount"/> / <see cref="TryConsumeRequestedPlayerCount"/>）。
+    ///    クイック再開と同様「予約→消費」のワンショット方式だが、前回のゲーム結果の有無に
+    ///    依存しない点が異なる（初回起動時でも成立する）。
     /// </summary>
     public class GameManager : MonoBehaviour
     {
@@ -47,6 +51,9 @@ namespace LuckyTrash.Controllers
 
         private bool _quickRestartPending;
         private int _quickRestartPlayerCount;
+
+        private bool _requestedPlayerCountPending;
+        private int _requestedPlayerCount;
 
         /// <summary>
         /// 直近ゲームの最終順位（座席インデックスのリスト、1位から順）。まだ記録が無ければ null。
@@ -145,6 +152,35 @@ namespace LuckyTrash.Controllers
             {
                 playerCount = _quickRestartPlayerCount;
                 _quickRestartPending = false;
+                return true;
+            }
+
+            playerCount = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// TitleScene の人数選択ポップアップ（CPU対戦モード）で選ばれた人数を予約する。
+        /// 次に GameScene がロードされた際、人数選択パネルを出さずにこの人数で
+        /// 自動的にゲームを開始する。前回のゲーム結果の有無に関わらず常に成立する。
+        /// </summary>
+        public void RequestPlayerCount(int playerCount)
+        {
+            _requestedPlayerCountPending = true;
+            _requestedPlayerCount = playerCount;
+        }
+
+        /// <summary>
+        /// TitleScene からの人数リクエスト予約があれば人数を取得したうえで、その予約を消費
+        /// （クリア）して true を返す。予約が無ければ false を返す。
+        /// GameController の起動時に、クイック再開の判定より先に一度だけ呼ばれる想定。
+        /// </summary>
+        public bool TryConsumeRequestedPlayerCount(out int playerCount)
+        {
+            if (_requestedPlayerCountPending)
+            {
+                playerCount = _requestedPlayerCount;
+                _requestedPlayerCountPending = false;
                 return true;
             }
 

@@ -12,7 +12,10 @@
       "mcp__UnityMCP__manage_build",
       "mcp__UnityMCP__refresh_unity",
       "mcp__UnityMCP__run_tests",
-      "mcp__UnityMCP__find_gameobjects"
+      "mcp__UnityMCP__find_gameobjects",
+      "Bash(xargs -I{} echo {})",
+      "mcp__UnityMCP__manage_script",
+      "Bash(git status *)"
     ]
   }
 }

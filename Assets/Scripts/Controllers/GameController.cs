@@ -17,9 +17,13 @@ namespace LuckyTrash.Controllers
     /// 「人数選択 → 開始プレイヤー決定 → ゲーム開始」の順で進行する。
     /// 開始プレイヤーは、前回と同じ人数・同じ座席構成であれば <see cref="GameManager"/> に
     /// 記録された前回の最下位座席から、そうでなければランダムに決定する。
-    /// 起動時に <see cref="GameManager.TryConsumeQuickRestart"/> で「クイック再開」の予約が
-    /// あれば、人数選択パネルを出さずに直前と同じ人数でそのままゲームを開始する
-    /// （ResultScene の「もう一度プレイ」から戻ってきた場合）。
+    /// 起動時に <see cref="GameManager.TryConsumeRequestedPlayerCount"/> で TitleScene の
+    /// 人数選択ポップアップからのリクエストがあれば、その人数で人数選択パネルを出さずに
+    /// そのままゲームを開始する。次に <see cref="GameManager.TryConsumeQuickRestart"/> で
+    /// 「クイック再開」の予約があれば、人数選択パネルを出さずに直前と同じ人数でそのまま
+    /// ゲームを開始する（ResultScene の「もう一度プレイ」から戻ってきた場合）。
+    /// どちらの予約も無ければ、この GameScene 内蔵の人数選択パネルを表示する
+    /// （TitleScene を経由しない開発時の直接起動などのフォールバック用）。
     ///
     /// 1ターンは「1枚引く」「ルーレットを回す」の2ボタン制。プレイヤーはどちらを先に
     /// 押してもよく、押した方のボタンはその場で非活性化される。両方のアクション（と、
@@ -98,7 +102,14 @@ namespace LuckyTrash.Controllers
             if (_threePlayerButton != null) _threePlayerButton.onClick.AddListener(() => OnPlayerCountSelected(3));
             if (_fourPlayerButton != null) _fourPlayerButton.onClick.AddListener(() => OnPlayerCountSelected(4));
 
-            if (GameManager.Instance.TryConsumeQuickRestart(out int quickRestartPlayerCount))
+            if (GameManager.Instance.TryConsumeRequestedPlayerCount(out int requestedPlayerCount))
+            {
+                // TitleScene の人数選択ポップアップ（CPU対戦）から遷移してきた場合:
+                // 人数選択を経ずに、指定された人数でそのまま開始する。
+                ShowPlayerCountPanel(false);
+                OnPlayerCountSelected(requestedPlayerCount);
+            }
+            else if (GameManager.Instance.TryConsumeQuickRestart(out int quickRestartPlayerCount))
             {
                 // ResultScene の「もう一度プレイ」から戻ってきた場合: 人数選択を経ずにそのまま開始する。
                 ShowPlayerCountPanel(false);

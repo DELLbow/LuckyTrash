@@ -12,12 +12,13 @@ namespace LuckyTrash.Controllers
     /// GameScene での表示と同等のフォーマット（「1位: Player X」〜）で表示する。
     /// 「もう一度プレイ」は GameManager にクイック再開を予約したうえで GameScene へ遷移し
     /// （人数選択をスキップして前回と同じ人数で自動開始される）、
-    /// 「人数選択やり直し」はクイック再開の予約を明示的にクリアしたうえで GameScene へ遷移する
-    /// （通常通り人数選択パネルから始まる）。
+    /// 「人数選択やり直し」はクイック再開の予約を明示的にクリアしたうえで TitleScene へ遷移する
+    /// （TitleScene のモード選択→人数選択ポップアップから選び直す）。
     /// </summary>
     public class ResultSceneController : MonoBehaviour
     {
         private const string GameSceneName = "GameScene";
+        private const string TitleSceneName = "TitleScene";
 
         [SerializeField] private TMP_Text _rankingText;
         [SerializeField] private Button _playAgainButton;
@@ -72,12 +73,13 @@ namespace LuckyTrash.Controllers
         }
 
         /// <summary>
-        /// 「人数選択やり直し」：クイック再開の予約をクリアし、通常通り人数選択パネルから始める。
+        /// 「人数選択やり直し」：クイック再開の予約をクリアし、TitleScene へ戻って
+        /// モード選択→人数選択ポップアップから選び直す。
         /// </summary>
         private void OnRestartWithSelectionClicked()
         {
             GameManager.Instance.ClearQuickRestart();
-            SceneManager.LoadScene(GameSceneName);
+            SceneManager.LoadScene(TitleSceneName);
         }
     }
 }
