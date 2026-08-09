@@ -15,7 +15,16 @@
       "mcp__UnityMCP__find_gameobjects",
       "Bash(xargs -I{} echo {})",
       "mcp__UnityMCP__manage_script",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(grep -v \"\\\\.meta$\")",
+      "Bash(python3 -c \"from PIL import Image; im=Image.open\\('Assets/Playing Cards/Image/PlayingCards/Spade01.png'\\); print\\(im.size\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(xxd \"Assets/Playing Cards/Image/PlayingCards/Spade01.png\")",
+      "mcp__UnityMCP__manage_prefabs",
+      "mcp__UnityMCP__manage_asset",
+      "Bash(xargs grep -l \"a638b05a311a80c478afc90197275431\")",
+      "Bash(xargs -I{} grep -l \"933532a4fcc9baf4fa0491de14d08ed7\" {})",
+      "Bash(xargs cat)"
     ]
   }
 }

@@ -280,27 +280,24 @@ namespace LuckyTrash.Controllers
         }
 
         /// <summary>
-        /// 「1枚引く」の演出（山札→基準カードスロットへのスライド+フリップ）を再生し、
-        /// 完了後に実際に GameState.DrawReferenceCard() を呼んでカードを確定・表示する。
-        /// 両ボタンを隠し、判定処理（ResolveTurnRoutine）を開始する。
+        /// 実際に GameState.DrawReferenceCard() を先に呼んでカードを確定させたうえで、
+        /// 「1枚引く」の演出（山札→基準カードスロットへのスライド+フリップ）を再生する。
+        /// カードを先に確定させておくことで、演出開始前（裏向きで山札から出てくる瞬間）に
+        /// 正しいマテリアルを設定でき、以後は差し替え不要になる（両面シェーダーが回転に応じて
+        /// 裏/表を自動的に見せる）。演出完了後、両ボタンを隠し、判定処理（ResolveTurnRoutine）を
+        /// 開始する。
         /// </summary>
         private IEnumerator DrawCardRoutine()
         {
-            if (_referenceCardDrawView != null)
-            {
-                yield return StartCoroutine(_referenceCardDrawView.PlayDrawAnimation());
-            }
-
             var (card, reconstituted) = _gameState.DrawReferenceCard();
             _pendingDrawnCard = card;
             _pendingFlipDeckWasReconstituted = reconstituted;
+            UpdateDeckCountLabel();
 
             if (_referenceCardDrawView != null)
             {
-                _referenceCardDrawView.ShowCard(card);
+                yield return StartCoroutine(_referenceCardDrawView.PlayDrawAnimation(card));
             }
-
-            UpdateDeckCountLabel();
 
             _turnPhase = TurnPhase.Resolving;
             HideTurnActionButtons();

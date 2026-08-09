@@ -1,3 +1,4 @@
+using System;
 using LuckyTrash.Cards;
 using TMPro;
 using UnityEngine;
@@ -6,40 +7,42 @@ using UnityEngine.UI;
 namespace LuckyTrash.UI
 {
     /// <summary>
-    /// 1枚のカードを表すUIコンポーネント（テキストベースのプレースホルダー表示）。
-    /// 白背景のImageの上に「マークの記号+数字」（例: ♥7, ♠J）を表示し、
-    /// Card.Color に応じて文字色を赤/黒に切り替える。
+    /// 1枚のカードを表すUIコンポーネント。
+    /// 表向き表示は「Free Playing Cards Pack」(Game Asset Studio) のスプライトを使う。
+    /// Card(Suit, Rank) からスート別×ランク別の配列を引いて対応するスプライトを表示し、
+    /// 裏向き表示にはアセットのカード裏面スプライトを使う（テキストによるランク+スート表記は
+    /// アートに含まれているため、既存の <see cref="_label"/> は空文字にして非表示にする）。
     /// プレハブ化して HandView から動的に生成する想定。
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class CardView : MonoBehaviour
     {
-        // TMPの標準的な赤/黒よりも見やすいよう、少し落ち着かせた色を既定値にしている。
-        private static readonly Color RedTextColor = new Color(0.80f, 0.05f, 0.05f);
-        private static readonly Color BlackTextColor = Color.black;
+        /// <summary>1スート分、ランク1(A)〜13(K)のスプライトを順に並べたもの。</summary>
+        [Serializable]
+        private struct SuitFaceSprites
+        {
+            [Tooltip("インデックス0=ランク1(A) 〜 インデックス12=ランク13(K)。")]
+            public Sprite[] byRank;
+        }
 
-        // カード裏面のプレースホルダー色（新規アート素材は用意せず、背景色の切り替えで表現する）。
-        private static readonly Color BackColor = new Color(0.15f, 0.25f, 0.55f);
-        private static readonly Color FrontColor = Color.white;
+        [Header("Face Sprites (Free Playing Cards Pack)")]
+        [SerializeField] private SuitFaceSprites _spadeFaces;
+        [SerializeField] private SuitFaceSprites _heartFaces;
+        [SerializeField] private SuitFaceSprites _diamondFaces;
+        [SerializeField] private SuitFaceSprites _clubFaces;
+
+        [Header("Back Sprite")]
+        [SerializeField] private Sprite _backSprite;
 
         [SerializeField] private Image _background;
         [SerializeField] private TMP_Text _label;
 
         /// <summary>
-        /// カードの内容を受け取り、表示（背景・テキスト・文字色）を更新する（表向き）。
+        /// カードの内容を受け取り、表示（背景スプライト）を更新する（表向き）。
         /// </summary>
         public void SetCard(Card card)
         {
-            if (_background != null)
-            {
-                _background.color = FrontColor;
-            }
-
-            if (_label != null)
-            {
-                _label.text = FormatCardText(card);
-                _label.color = card.Color == CardColor.Red ? RedTextColor : BlackTextColor;
-            }
+            ApplySprite(GetFaceSprite(card.Suit, card.Rank));
         }
 
         /// <summary>
@@ -48,37 +51,68 @@ namespace LuckyTrash.UI
         /// </summary>
         public void SetFaceDown()
         {
-            if (_background != null)
-            {
-                _background.color = BackColor;
-            }
-
-            if (_label != null)
-            {
-                _label.text = string.Empty;
-            }
+            ApplySprite(_backSprite);
         }
 
         /// <summary>
         /// 表向きだが中身が空のプレースホルダー状態にする（基準カードスロットの待機時や、
-        /// ドロー演出のフリップ後〜実際の中身確定までの一瞬に使う）。
+        /// ドロー演出のフリップ後〜実際の中身確定までの一瞬に使う）。対応する絵柄が無い状態
+        /// なので、無地の白背景（スプライト無し）で表す。
         /// </summary>
         public void SetBlankFace()
         {
+            ApplySprite(null);
+        }
+
+        private void ApplySprite(Sprite sprite)
+        {
             if (_background != null)
             {
-                _background.color = FrontColor;
+                _background.sprite = sprite;
+                _background.color = Color.white;
+                _background.preserveAspect = true;
             }
 
+            // ランク+スートはスプライトの絵柄で判別できるため、旧テキスト表記は表示しない。
             if (_label != null)
             {
                 _label.text = string.Empty;
             }
         }
 
+        private Sprite GetFaceSprite(Suit suit, int rank)
+        {
+            SuitFaceSprites set;
+            switch (suit)
+            {
+                case Suit.Spade:
+                    set = _spadeFaces;
+                    break;
+                case Suit.Heart:
+                    set = _heartFaces;
+                    break;
+                case Suit.Diamond:
+                    set = _diamondFaces;
+                    break;
+                case Suit.Club:
+                    set = _clubFaces;
+                    break;
+                default:
+                    return null;
+            }
+
+            if (set.byRank == null || rank < 1 || rank > set.byRank.Length)
+            {
+                Debug.LogWarning($"{nameof(CardView)}: {suit} {rank} のスプライトが未設定です。", this);
+                return null;
+            }
+
+            return set.byRank[rank - 1];
+        }
+
         /// <summary>
         /// 「マークの記号+数字」形式のテキストを生成する（例: ♥7, ♠J）。
-        /// GameController のステータス表示など、CardView 以外からの再利用も想定して公開している。
+        /// GameController のデバッグ表示など、CardView 以外からの再利用も想定して公開している。
         /// </summary>
         public static string FormatCardText(Card card)
         {
