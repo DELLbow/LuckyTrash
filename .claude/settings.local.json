@@ -24,7 +24,8 @@
       "mcp__UnityMCP__manage_asset",
       "Bash(xargs grep -l \"a638b05a311a80c478afc90197275431\")",
       "Bash(xargs -I{} grep -l \"933532a4fcc9baf4fa0491de14d08ed7\" {})",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(git checkout *)"
     ]
   }
 }
