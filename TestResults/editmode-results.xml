@@ -1,0 +1,674 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="94" result="Passed" total="94" passed="94" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.0748225">
+  <test-suite type="TestSuite" id="1000" name="LuckyTrash" fullname="LuckyTrash" runstate="Runnable" testcasecount="94" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.074823" total="94" passed="94" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1020" name="LuckyTrash.Cards.Tests.EditMode.dll" fullname="C:/Work/Unity/LuckyTrash/Library/ScriptAssemblies/LuckyTrash.Cards.Tests.EditMode.dll" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.028550" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="1540" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1021" name="LuckyTrash" fullname="LuckyTrash" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.028258" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1022" name="Cards" fullname="LuckyTrash.Cards" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.028113" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1023" name="Tests" fullname="LuckyTrash.Cards.Tests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.027944" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="CardTests" fullname="LuckyTrash.Cards.Tests.CardTests" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.020508" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1002" name="Color_HeartAndDiamond_AreRed" fullname="LuckyTrash.Cards.Tests.CardTests.Color_HeartAndDiamond_AreRed" methodname="Color_HeartAndDiamond_AreRed" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="1147562986" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.007138" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1003" name="Color_SpadeAndClub_AreBlack" fullname="LuckyTrash.Cards.Tests.CardTests.Color_SpadeAndClub_AreBlack" methodname="Color_SpadeAndClub_AreBlack" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="900142675" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000140" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1007" name="Constructor_RankOutOfRange_Throws" fullname="LuckyTrash.Cards.Tests.CardTests.Constructor_RankOutOfRange_Throws" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.002791" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1004" name="Constructor_RankOutOfRange_Throws(0)" fullname="LuckyTrash.Cards.Tests.CardTests.Constructor_RankOutOfRange_Throws(0)" methodname="Constructor_RankOutOfRange_Throws" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="2127260704" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001492" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1005" name="Constructor_RankOutOfRange_Throws(14)" fullname="LuckyTrash.Cards.Tests.CardTests.Constructor_RankOutOfRange_Throws(14)" methodname="Constructor_RankOutOfRange_Throws" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="4231547" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000048" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1006" name="Constructor_RankOutOfRange_Throws(-1)" fullname="LuckyTrash.Cards.Tests.CardTests.Constructor_RankOutOfRange_Throws(-1)" methodname="Constructor_RankOutOfRange_Throws" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="1378997759" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000032" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1009" name="Equality_DifferentRank_AreNotEqual" fullname="LuckyTrash.Cards.Tests.CardTests.Equality_DifferentRank_AreNotEqual" methodname="Equality_DifferentRank_AreNotEqual" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="37316169" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001450" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="Equality_SameSuitAndRank_AreEqual" fullname="LuckyTrash.Cards.Tests.CardTests.Equality_SameSuitAndRank_AreEqual" methodname="Equality_SameSuitAndRank_AreEqual" classname="LuckyTrash.Cards.Tests.CardTests" runstate="Runnable" seed="2036416803" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000922" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1010" name="DeckTests" fullname="LuckyTrash.Cards.Tests.DeckTests" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.006868" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1011" name="CreateStandard52_Has52UniqueCards" fullname="LuckyTrash.Cards.Tests.DeckTests.CreateStandard52_Has52UniqueCards" methodname="CreateStandard52_Has52UniqueCards" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="419067658" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.002031" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="Draw_AllCards_ThenDrawAgain_Throws" fullname="LuckyTrash.Cards.Tests.DeckTests.Draw_AllCards_ThenDrawAgain_Throws" methodname="Draw_AllCards_ThenDrawAgain_Throws" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="333068003" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000362" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="Draw_ReducesCountByOne_AndReturnsRemovedCard" fullname="LuckyTrash.Cards.Tests.DeckTests.Draw_ReducesCountByOne_AndReturnsRemovedCard" methodname="Draw_ReducesCountByOne_AndReturnsRemovedCard" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="1091081886" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001022" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="Reconstitute_MergesDiscardPile_AndReshufflesIntoNewDeck" fullname="LuckyTrash.Cards.Tests.DeckTests.Reconstitute_MergesDiscardPile_AndReshufflesIntoNewDeck" methodname="Reconstitute_MergesDiscardPile_AndReshufflesIntoNewDeck" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="493723352" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001129" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1019" name="Reconstitute_NullDiscardPile_Throws" fullname="LuckyTrash.Cards.Tests.DeckTests.Reconstitute_NullDiscardPile_Throws" methodname="Reconstitute_NullDiscardPile_Throws" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="72096594" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000365" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="Shuffle_ChangesOrder_WithSeededRandom" fullname="LuckyTrash.Cards.Tests.DeckTests.Shuffle_ChangesOrder_WithSeededRandom" methodname="Shuffle_ChangesOrder_WithSeededRandom" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="1014862502" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000378" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="Shuffle_DoesNotChangeCountOrContents" fullname="LuckyTrash.Cards.Tests.DeckTests.Shuffle_DoesNotChangeCountOrContents" methodname="Shuffle_DoesNotChangeCountOrContents" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="139589606" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1016" name="TryDraw_OnEmptyDeck_ReturnsFalse_AndDoesNotThrow" fullname="LuckyTrash.Cards.Tests.DeckTests.TryDraw_OnEmptyDeck_ReturnsFalse_AndDoesNotThrow" methodname="TryDraw_OnEmptyDeck_ReturnsFalse_AndDoesNotThrow" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="167923594" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000097" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1017" name="TwoDecks_AreIndependent_HandDeckAndFlipDeckDoNotMix" fullname="LuckyTrash.Cards.Tests.DeckTests.TwoDecks_AreIndependent_HandDeckAndFlipDeckDoNotMix" methodname="TwoDecks_AreIndependent_HandDeckAndFlipDeckDoNotMix" classname="LuckyTrash.Cards.Tests.DeckTests" runstate="Runnable" seed="447341270" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000116" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1038" name="LuckyTrash.Controllers.Tests.EditMode.dll" fullname="C:/Work/Unity/LuckyTrash/Library/ScriptAssemblies/LuckyTrash.Controllers.Tests.EditMode.dll" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.009447" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="1540" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1039" name="LuckyTrash" fullname="LuckyTrash" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.009221" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1040" name="Controllers" fullname="LuckyTrash.Controllers" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.009081" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1041" name="Tests" fullname="LuckyTrash.Controllers.Tests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.008878" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1024" name="GameManagerTests" fullname="LuckyTrash.Controllers.Tests.GameManagerTests" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.008617" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1037" name="ClearQuickRestart_CancelsPendingRequest" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.ClearQuickRestart_CancelsPendingRequest" methodname="ClearQuickRestart_CancelsPendingRequest" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1390887323" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.003483" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1032" name="LastFinalRankingSeatIndices_AfterRecordGameResult_MatchesRecordedOrder" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.LastFinalRankingSeatIndices_AfterRecordGameResult_MatchesRecordedOrder" methodname="LastFinalRankingSeatIndices_AfterRecordGameResult_MatchesRecordedOrder" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1691869608" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000624" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1031" name="LastFinalRankingSeatIndices_BeforeAnyRecord_IsNull" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.LastFinalRankingSeatIndices_BeforeAnyRecord_IsNull" methodname="LastFinalRankingSeatIndices_BeforeAnyRecord_IsNull" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="280447810" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000256" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1035" name="RequestQuickRestart_AfterRecordGameResult_TryConsumeReturnsTrue_WithSamePlayerCount" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.RequestQuickRestart_AfterRecordGameResult_TryConsumeReturnsTrue_WithSamePlayerCount" methodname="RequestQuickRestart_AfterRecordGameResult_TryConsumeReturnsTrue_WithSamePlayerCount" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="11514163" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000233" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1034" name="RequestQuickRestart_WithoutPreviousRecord_DoesNothing" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.RequestQuickRestart_WithoutPreviousRecord_DoesNothing" methodname="RequestQuickRestart_WithoutPreviousRecord_DoesNothing" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1576611752" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000143" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1036" name="TryConsumeQuickRestart_ConsumesTheRequest_SecondCallReturnsFalse" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryConsumeQuickRestart_ConsumesTheRequest_SecondCallReturnsFalse" methodname="TryConsumeQuickRestart_ConsumesTheRequest_SecondCallReturnsFalse" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1233039275" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000196" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1033" name="TryConsumeQuickRestart_WithoutRequest_ReturnsFalse" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryConsumeQuickRestart_WithoutRequest_ReturnsFalse" methodname="TryConsumeQuickRestart_WithoutRequest_ReturnsFalse" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="227728182" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000141" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1030" name="TryGetStartingSeat_AfterFailedLookup_OutParamIsNegativeOne" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_AfterFailedLookup_OutParamIsNegativeOne" methodname="TryGetStartingSeat_AfterFailedLookup_OutParamIsNegativeOne" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="85247900" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000395" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="TryGetStartingSeat_DifferentPlayerCount_ReturnsFalse" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_DifferentPlayerCount_ReturnsFalse" methodname="TryGetStartingSeat_DifferentPlayerCount_ReturnsFalse" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1811841947" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000229" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1028" name="TryGetStartingSeat_DifferentSeatComposition_ReturnsFalse" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_DifferentSeatComposition_ReturnsFalse" methodname="TryGetStartingSeat_DifferentSeatComposition_ReturnsFalse" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="454252675" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000647" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1025" name="TryGetStartingSeat_NoRecordYet_ReturnsFalse" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_NoRecordYet_ReturnsFalse" methodname="TryGetStartingSeat_NoRecordYet_ReturnsFalse" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1402342363" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000170" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="TryGetStartingSeat_SamePlayerCountAndSeats_ReturnsTrue_WithRecordedLastPlaceSeat" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_SamePlayerCountAndSeats_ReturnsTrue_WithRecordedLastPlaceSeat" methodname="TryGetStartingSeat_SamePlayerCountAndSeats_ReturnsTrue_WithRecordedLastPlaceSeat" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="1231399429" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000174" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="TryGetStartingSeat_SeatOrderDoesNotMatter" fullname="LuckyTrash.Controllers.Tests.GameManagerTests.TryGetStartingSeat_SeatOrderDoesNotMatter" methodname="TryGetStartingSeat_SeatOrderDoesNotMatter" classname="LuckyTrash.Controllers.Tests.GameManagerTests" runstate="Runnable" seed="251062463" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000166" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1119" name="LuckyTrash.Game.Tests.EditMode.dll" fullname="C:/Work/Unity/LuckyTrash/Library/ScriptAssemblies/LuckyTrash.Game.Tests.EditMode.dll" runstate="Runnable" testcasecount="65" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.031919" total="65" passed="65" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="1540" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1120" name="LuckyTrash" fullname="LuckyTrash" runstate="Runnable" testcasecount="65" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.031340" total="65" passed="65" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1121" name="Game" fullname="LuckyTrash.Game" runstate="Runnable" testcasecount="65" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.030962" total="65" passed="65" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1122" name="Tests" fullname="LuckyTrash.Game.Tests" runstate="Runnable" testcasecount="65" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.030466" total="65" passed="65" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1042" name="GameSetupTests" fullname="LuckyTrash.Game.Tests.GameSetupTests" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="25" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.006536" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1054" name="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001623" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1051" name="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(2)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(2)" methodname="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1658322782" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001287" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1052" name="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(3)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(3)" methodname="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="623616845" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000045" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1053" name="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers(4)" methodname="SetUp_AllPlayerHands_HaveNoDuplicateCardsAcrossPlayers" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="634655290" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000034" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1071" name="SetUp_CustomHumanSeatIndex_OnlyThatSeatIsHuman" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_CustomHumanSeatIndex_OnlyThatSeatIsHuman" methodname="SetUp_CustomHumanSeatIndex_OnlyThatSeatIsHuman" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="33059089" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000264" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1068" name="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000547" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1065" name="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(2)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(2)" methodname="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1049039462" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000212" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1066" name="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(3)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(3)" methodname="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1499503802" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000041" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1067" name="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder(4)" methodname="SetUp_DefaultHumanSeatIndex_SeatZeroIsHuman_OthersAreCpu_NumberedInSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1248301676" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1050" name="SetUp_EachPlayer_HasExactlySixCards" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_EachPlayer_HasExactlySixCards" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000451" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1047" name="SetUp_EachPlayer_HasExactlySixCards(2)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_EachPlayer_HasExactlySixCards(2)" methodname="SetUp_EachPlayer_HasExactlySixCards" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1578599195" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000140" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1048" name="SetUp_EachPlayer_HasExactlySixCards(3)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_EachPlayer_HasExactlySixCards(3)" methodname="SetUp_EachPlayer_HasExactlySixCards" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="828005504" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1049" name="SetUp_EachPlayer_HasExactlySixCards(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_EachPlayer_HasExactlySixCards(4)" methodname="SetUp_EachPlayer_HasExactlySixCards" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1908704381" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1058" name="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000677" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1055" name="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(2)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(2)" methodname="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="2117467323" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000111" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1056" name="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(3)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(3)" methodname="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="735913030" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000120" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1057" name="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck(4)" methodname="SetUp_FlipDeck_Has52Cards_AndIsIndependentFromHandDeck" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1114083248" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000068" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1069" name="SetUp_HumanDisplayName_IsUsedForHumanSeat" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_HumanDisplayName_IsUsedForHumanSeat" methodname="SetUp_HumanDisplayName_IsUsedForHumanSeat" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="686372892" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000104" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1074" name="SetUp_HumanSeatIndexOutOfRange_Throws" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_HumanSeatIndexOutOfRange_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000394" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1072" name="SetUp_HumanSeatIndexOutOfRange_Throws(-1)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_HumanSeatIndexOutOfRange_Throws(-1)" methodname="SetUp_HumanSeatIndexOutOfRange_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="16666030" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000150" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1073" name="SetUp_HumanSeatIndexOutOfRange_Throws(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_HumanSeatIndexOutOfRange_Throws(4)" methodname="SetUp_HumanSeatIndexOutOfRange_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="160113216" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000039" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1070" name="SetUp_NullOrEmptyHumanDisplayName_DefaultsToPlayer" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_NullOrEmptyHumanDisplayName_DefaultsToPlayer" methodname="SetUp_NullOrEmptyHumanDisplayName_DefaultsToPlayer" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1348184678" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000087" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1063" name="SetUp_OutOfRangePlayerCount_Throws" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_OutOfRangePlayerCount_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000543" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1059" name="SetUp_OutOfRangePlayerCount_Throws(0)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_OutOfRangePlayerCount_Throws(0)" methodname="SetUp_OutOfRangePlayerCount_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1353365456" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000137" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1060" name="SetUp_OutOfRangePlayerCount_Throws(1)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_OutOfRangePlayerCount_Throws(1)" methodname="SetUp_OutOfRangePlayerCount_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1704095697" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000037" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1061" name="SetUp_OutOfRangePlayerCount_Throws(5)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_OutOfRangePlayerCount_Throws(5)" methodname="SetUp_OutOfRangePlayerCount_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1121521814" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000029" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1062" name="SetUp_OutOfRangePlayerCount_Throws(-1)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_OutOfRangePlayerCount_Throws(-1)" methodname="SetUp_OutOfRangePlayerCount_Throws" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="239391679" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000027" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1046" name="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000646" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1043" name="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(2)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(2)" methodname="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="152981579" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000196" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1044" name="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(3)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(3)" methodname="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1971941022" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000062" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1045" name="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(4)" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder(4)" methodname="SetUp_ValidPlayerCount_CreatesCorrectNumberOfPlayers_InSeatOrder" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="973162805" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000044" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1064" name="SetUp_WithoutExplicitRandom_StillProducesValidSetup" fullname="LuckyTrash.Game.Tests.GameSetupTests.SetUp_WithoutExplicitRandom_StillProducesValidSetup" methodname="SetUp_WithoutExplicitRandom_StillProducesValidSetup" classname="LuckyTrash.Game.Tests.GameSetupTests" runstate="Runnable" seed="1534086438" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1075" name="GameStateTests" fullname="LuckyTrash.Game.Tests.GameStateTests" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.013476" total="19" passed="19" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1089" name="DrawReferenceCard_AfterGameEnded_Throws" fullname="LuckyTrash.Game.Tests.GameStateTests.DrawReferenceCard_AfterGameEnded_Throws" methodname="DrawReferenceCard_AfterGameEnded_Throws" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1354080794" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.002469" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1087" name="DrawReferenceCard_ReducesFlipDeckCount_AndAddsDrawnCardToDiscardPile" fullname="LuckyTrash.Game.Tests.GameStateTests.DrawReferenceCard_ReducesFlipDeckCount_AndAddsDrawnCardToDiscardPile" methodname="DrawReferenceCard_ReducesFlipDeckCount_AndAddsDrawnCardToDiscardPile" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1185655448" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000228" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1088" name="DrawReferenceCard_WhenFlipDeckEmpty_ReconstitutesFromDiscardPile" fullname="LuckyTrash.Game.Tests.GameStateTests.DrawReferenceCard_WhenFlipDeckEmpty_ReconstitutesFromDiscardPile" methodname="DrawReferenceCard_WhenFlipDeckEmpty_ReconstitutesFromDiscardPile" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="569343028" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000221" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1082" name="PlayTurn_AfterGameEnded_Throws" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_AfterGameEnded_Throws" methodname="PlayTurn_AfterGameEnded_Throws" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1359901848" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000369" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1079" name="PlayTurn_FinishedPlayer_IsSkippedInFutureTurns" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_FinishedPlayer_IsSkippedInFutureTurns" methodname="PlayTurn_FinishedPlayer_IsSkippedInFutureTurns" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1545104126" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000903" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1080" name="PlayTurn_FlipDeckReconstitution_WorksAndAllowsContinuedPlay" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_FlipDeckReconstitution_WorksAndAllowsContinuedPlay" methodname="PlayTurn_FlipDeckReconstitution_WorksAndAllowsContinuedPlay" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="888097248" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000587" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1077" name="PlayTurn_MatchingCard_IsDiscarded_AndPlayerFinishes" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_MatchingCard_IsDiscarded_AndPlayerFinishes" methodname="PlayTurn_MatchingCard_IsDiscarded_AndPlayerFinishes" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1037253978" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000324" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1078" name="PlayTurn_NoMatchingCards_ResultsInPass_HandUnchanged" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_NoMatchingCards_ResultsInPass_HandUnchanged" methodname="PlayTurn_NoMatchingCards_ResultsInPass_HandUnchanged" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1499300447" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000173" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1083" name="PlayTurn_TwoPlayerFullGame_EventuallyEndsWithDistinctRanks" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_TwoPlayerFullGame_EventuallyEndsWithDistinctRanks" methodname="PlayTurn_TwoPlayerFullGame_EventuallyEndsWithDistinctRanks" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="413433707" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001599" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1081" name="PlayTurn_TwoPlayers_LastActivePlayer_GetsAutoAssignedLastPlace_AndGameEnds" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_TwoPlayers_LastActivePlayer_GetsAutoAssignedLastPlace_AndGameEnds" methodname="PlayTurn_TwoPlayers_LastActivePlayer_GetsAutoAssignedLastPlace_AndGameEnds" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="137615586" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000395" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1076" name="PlayTurn_WithRealSetup_ReturnsStructurallyValidTurnResult" fullname="LuckyTrash.Game.Tests.GameStateTests.PlayTurn_WithRealSetup_ReturnsStructurallyValidTurnResult" methodname="PlayTurn_WithRealSetup_ReturnsStructurallyValidTurnResult" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="2105330175" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000329" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1093" name="ResolveTurn_AfterGameEnded_Throws" fullname="LuckyTrash.Game.Tests.GameStateTests.ResolveTurn_AfterGameEnded_Throws" methodname="ResolveTurn_AfterGameEnded_Throws" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1561697825" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000377" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1092" name="ResolveTurn_FlipDeckWasReconstituted_IsReflectedInTurnResult" fullname="LuckyTrash.Game.Tests.GameStateTests.ResolveTurn_FlipDeckWasReconstituted_IsReflectedInTurnResult" methodname="ResolveTurn_FlipDeckWasReconstituted_IsReflectedInTurnResult" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1689245900" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000103" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1090" name="ResolveTurn_MatchingReferenceCard_DiscardsFromHand_AndConfirmsRank" fullname="LuckyTrash.Game.Tests.GameStateTests.ResolveTurn_MatchingReferenceCard_DiscardsFromHand_AndConfirmsRank" methodname="ResolveTurn_MatchingReferenceCard_DiscardsFromHand_AndConfirmsRank" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1148528460" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000180" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1091" name="ResolveTurn_NoMatchingReferenceCard_ResultsInPass_HandUnchanged" fullname="LuckyTrash.Game.Tests.GameStateTests.ResolveTurn_NoMatchingReferenceCard_ResultsInPass_HandUnchanged" methodname="ResolveTurn_NoMatchingReferenceCard_ResultsInPass_HandUnchanged" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1639308644" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000138" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1086" name="SpinCategory_AfterGameEnded_Throws" fullname="LuckyTrash.Game.Tests.GameStateTests.SpinCategory_AfterGameEnded_Throws" methodname="SpinCategory_AfterGameEnded_Throws" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1944047889" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000351" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1085" name="SpinCategory_DelegatesToTheSameRouletteSelectorInstance_SameSequenceAsDirectUse" fullname="LuckyTrash.Game.Tests.GameStateTests.SpinCategory_DelegatesToTheSameRouletteSelectorInstance_SameSequenceAsDirectUse" methodname="SpinCategory_DelegatesToTheSameRouletteSelectorInstance_SameSequenceAsDirectUse" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="1504068339" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000173" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1084" name="SpinCategory_ReturnsValidCategory" fullname="LuckyTrash.Game.Tests.GameStateTests.SpinCategory_ReturnsValidCategory" methodname="SpinCategory_ReturnsValidCategory" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="786085121" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000094" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1094" name="SplitMethods_CalledInSequence_ProduceSameResultAsPlayTurn" fullname="LuckyTrash.Game.Tests.GameStateTests.SplitMethods_CalledInSequence_ProduceSameResultAsPlayTurn" methodname="SplitMethods_CalledInSequence_ProduceSameResultAsPlayTurn" classname="LuckyTrash.Game.Tests.GameStateTests" runstate="Runnable" seed="2008950553" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000379" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1095" name="HandDiscardEvaluatorTests" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.003132" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1099" name="Color_Black_MatchesSpadeAndClub" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.Color_Black_MatchesSpadeAndClub" methodname="Color_Black_MatchesSpadeAndClub" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="1788657846" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000459" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1098" name="Color_Red_MatchesHeartAndDiamond" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.Color_Red_MatchesHeartAndDiamond" methodname="Color_Red_MatchesHeartAndDiamond" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="1100294667" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000299" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1101" name="EmptyHand_ReturnsEmptyList" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.EmptyHand_ReturnsEmptyList" methodname="EmptyHand_ReturnsEmptyList" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="1525851714" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1100" name="NoMatchingCards_ReturnsEmptyList_NoException" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.NoMatchingCards_ReturnsEmptyList_NoException" methodname="NoMatchingCards_ReturnsEmptyList_NoException" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="305557614" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000231" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1102" name="NullHand_Throws" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.NullHand_Throws" methodname="NullHand_Throws" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="776822374" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000218" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1096" name="Number_MatchesSameRank_AcrossMultipleSuits" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.Number_MatchesSameRank_AcrossMultipleSuits" methodname="Number_MatchesSameRank_AcrossMultipleSuits" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="1460558052" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000435" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1097" name="Suit_MatchesSameSuit_AcrossMultipleRanks" fullname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests.Suit_MatchesSameSuit_AcrossMultipleRanks" methodname="Suit_MatchesSameSuit_AcrossMultipleRanks" classname="LuckyTrash.Game.Tests.HandDiscardEvaluatorTests" runstate="Runnable" seed="293050214" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000379" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1103" name="PlayerTests" fullname="LuckyTrash.Game.Tests.PlayerTests" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.002570" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1106" name="AddToHand_MultipleCards_AddsAll" fullname="LuckyTrash.Game.Tests.PlayerTests.AddToHand_MultipleCards_AddsAll" methodname="AddToHand_MultipleCards_AddsAll" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="1339544928" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000229" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1105" name="AddToHand_SingleCard_IncreasesHandCount" fullname="LuckyTrash.Game.Tests.PlayerTests.AddToHand_SingleCard_IncreasesHandCount" methodname="AddToHand_SingleCard_IncreasesHandCount" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="748149426" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000179" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1109" name="ConfirmRank_SetsRank" fullname="LuckyTrash.Game.Tests.PlayerTests.ConfirmRank_SetsRank" methodname="ConfirmRank_SetsRank" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="1096698863" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000162" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1110" name="Constructor_NegativeSeatIndex_Throws" fullname="LuckyTrash.Game.Tests.PlayerTests.Constructor_NegativeSeatIndex_Throws" methodname="Constructor_NegativeSeatIndex_Throws" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="1688480634" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000174" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1111" name="NewPlayer_BeforeSetIdentity_DefaultsToHuman_WithNullDisplayName" fullname="LuckyTrash.Game.Tests.PlayerTests.NewPlayer_BeforeSetIdentity_DefaultsToHuman_WithNullDisplayName" methodname="NewPlayer_BeforeSetIdentity_DefaultsToHuman_WithNullDisplayName" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="2050720871" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000076" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1104" name="NewPlayer_HasEmptyHand_NullRank_AndIsEliminated" fullname="LuckyTrash.Game.Tests.PlayerTests.NewPlayer_HasEmptyHand_NullRank_AndIsEliminated" methodname="NewPlayer_HasEmptyHand_NullRank_AndIsEliminated" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="1735610863" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000130" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1108" name="RemoveFromHand_AllCards_MakesPlayerEliminated" fullname="LuckyTrash.Game.Tests.PlayerTests.RemoveFromHand_AllCards_MakesPlayerEliminated" methodname="RemoveFromHand_AllCards_MakesPlayerEliminated" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="1878925622" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000155" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1107" name="RemoveFromHand_RemovesOnlySpecifiedCards" fullname="LuckyTrash.Game.Tests.PlayerTests.RemoveFromHand_RemovesOnlySpecifiedCards" methodname="RemoveFromHand_RemovesOnlySpecifiedCards" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="966022591" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000377" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1113" name="SetIdentity_Cpu_SetsIsHumanFalse_AndDisplayName" fullname="LuckyTrash.Game.Tests.PlayerTests.SetIdentity_Cpu_SetsIsHumanFalse_AndDisplayName" methodname="SetIdentity_Cpu_SetsIsHumanFalse_AndDisplayName" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="874382602" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000086" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1112" name="SetIdentity_Human_SetsIsHumanTrue_AndDisplayName" fullname="LuckyTrash.Game.Tests.PlayerTests.SetIdentity_Human_SetsIsHumanTrue_AndDisplayName" methodname="SetIdentity_Human_SetsIsHumanTrue_AndDisplayName" classname="LuckyTrash.Game.Tests.PlayerTests" runstate="Runnable" seed="797266643" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000073" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1114" name="RouletteSelectorTests" fullname="LuckyTrash.Game.Tests.RouletteSelectorTests" classname="LuckyTrash.Game.Tests.RouletteSelectorTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.003921" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1115" name="AllFaces_HasSixFaces_WithCorrectBreakdown" fullname="LuckyTrash.Game.Tests.RouletteSelectorTests.AllFaces_HasSixFaces_WithCorrectBreakdown" methodname="AllFaces_HasSixFaces_WithCorrectBreakdown" classname="LuckyTrash.Game.Tests.RouletteSelectorTests" runstate="Runnable" seed="2059496789" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001451" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1118" name="Spin_DifferentSeed_CanProduceDifferentSequence" fullname="LuckyTrash.Game.Tests.RouletteSelectorTests.Spin_DifferentSeed_CanProduceDifferentSequence" methodname="Spin_DifferentSeed_CanProduceDifferentSequence" classname="LuckyTrash.Game.Tests.RouletteSelectorTests" runstate="Runnable" seed="18314775" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000209" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1116" name="Spin_LargeSampleSize_ApproximatesThreeTwoOneRatio" fullname="LuckyTrash.Game.Tests.RouletteSelectorTests.Spin_LargeSampleSize_ApproximatesThreeTwoOneRatio" methodname="Spin_LargeSampleSize_ApproximatesThreeTwoOneRatio" classname="LuckyTrash.Game.Tests.RouletteSelectorTests" runstate="Runnable" seed="1998698485" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.001501" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1117" name="Spin_SameSeed_ProducesSameSequence" fullname="LuckyTrash.Game.Tests.RouletteSelectorTests.Spin_SameSeed_ProducesSameSequence" methodname="Spin_SameSeed_ProducesSameSequence" classname="LuckyTrash.Game.Tests.RouletteSelectorTests" runstate="Runnable" seed="1685946544" result="Passed" start-time="2026-08-14 03:00:25Z" end-time="2026-08-14 03:00:25Z" duration="0.000202" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:/Users/81907/AppData/LocalLow/DefaultCompany/LuckyTrash\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

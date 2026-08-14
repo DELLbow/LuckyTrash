@@ -10,16 +10,16 @@ namespace LuckyTrash.UI
     /// ルーレットの回転演出を担当するビュー。
     /// RouletteSelector 自体の抽選ロジックには一切関与せず、既に決まった
     /// <see cref="RouletteCategory"/> の結果を受け取り、見た目上どの扇形（同じカテゴリの
-    /// 扇形が複数ある場合はその中からランダムに1つ）にポインターが合うように円盤(Disc)を
-    /// 回転させるだけの純粋な演出コンポーネント。
-    /// 円盤の扇形構成は <see cref="RouletteSelector.AllFaces"/>（Number3/Suit2/Color1、
+    /// 扇形が複数ある場合はその中からランダムに1つ）にポインターが合うように円盤(<see cref="_disc"/>、
+    /// テーブル上に平らに置かれた3Dオブジェクト)をワールドY軸まわりに回転させるだけの純粋な演出
+    /// コンポーネント。円盤の扇形構成は <see cref="RouletteSelector.AllFaces"/>（Number3/Suit2/Color1、
     /// 60度ずつ6分割）とインデックスを完全に一致させている。
     /// </summary>
     public class RouletteWheelView : MonoBehaviour
     {
         private const float SliceAngle = 360f / 6f;
 
-        [SerializeField] private RectTransform _disc;
+        [SerializeField] private Transform _disc;
         [SerializeField] private float _spinDurationSeconds = 1.2f;
         [SerializeField] private int _minExtraTurns = 3;
         [SerializeField] private int _maxExtraTurns = 5; // Random.Range上限は排他的なので実際は3,4,5が出る
@@ -46,7 +46,7 @@ namespace LuckyTrash.UI
             int chosenSliceIndex = ChooseSliceIndex(resultCategory);
             float sliceMidAngle = chosenSliceIndex * SliceAngle + SliceAngle / 2f;
 
-            float startAngle = _disc.localEulerAngles.z;
+            float startAngle = _disc.localEulerAngles.y;
             int extraTurns = UnityEngine.Random.Range(_minExtraTurns, _maxExtraTurns + 1);
 
             // startAngle からポインター位置(sliceMidAngle)まで、少なくとも0度は進むように正規化した差分。
@@ -59,12 +59,12 @@ namespace LuckyTrash.UI
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / _spinDurationSeconds);
                 float eased = _easingCurve.Evaluate(t);
-                float currentZ = Mathf.LerpUnclamped(startAngle, targetAngle, eased);
-                _disc.localRotation = Quaternion.Euler(0f, 0f, currentZ);
+                float currentY = Mathf.LerpUnclamped(startAngle, targetAngle, eased);
+                _disc.localRotation = Quaternion.Euler(0f, currentY, 0f);
                 yield return null;
             }
 
-            _disc.localRotation = Quaternion.Euler(0f, 0f, targetAngle);
+            _disc.localRotation = Quaternion.Euler(0f, targetAngle, 0f);
             IsSpinning = false;
         }
 

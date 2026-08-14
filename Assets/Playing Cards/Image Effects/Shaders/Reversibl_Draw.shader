@@ -16,7 +16,16 @@
         Tags {
             "RenderType" = "TransparentCutout"
             "Queue" = "AlphaTest"
-            "RenderPipeline" = "UniversalRenderPipeline"
+            // URPが実際にビルド時のシェーダーバリアント除去(scriptable stripping)で照合するのは
+            // アセットクラス名の "UniversalRenderPipeline" ではなく "UniversalPipeline" というタグ値
+            // （URP標準のLit.shader等はすべてこちらを使用）。ここが不一致だと、ShaderPreprocessor
+            // (com.unity.render-pipelines.core)がこのSubShaderを「現在のレンダーパイプライン用ではない」
+            // と判断し、キーワードの組み合わせに関係なく Universal Forward パスの全バリアントを
+            // ビルドから除去してしまう。その結果、Editor上のPlay Modeでは正常に見えても、ビルドした
+            // プレイヤーではこのシェーダーを使うカード（手札・山札・基準カード）の本体だけが完全に
+            // 透明になる（UsePassで借用しているShadowCasterパスはLit.shader側の正しいタグを持つため
+            // 生き残り、影だけは映る）という症状になっていた。
+            "RenderPipeline" = "UniversalPipeline"
         }
 
         Pass

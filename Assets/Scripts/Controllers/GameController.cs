@@ -57,6 +57,10 @@ namespace LuckyTrash.Controllers
         [SerializeField] private ResultPopupView _resultPopupView;
         [SerializeField] private TMP_Text _deckCountText;
 
+        [Header("Camera")]
+        [Tooltip("ターン進行に合わせたカメラ演出を担当する。未設定の場合はカメラ演出なしで従来通り動作する。")]
+        [SerializeField] private CameraDirector _cameraDirector;
+
         [Header("Debug")]
         [SerializeField] private TMP_Text _statusText;
         [Tooltip("ONの場合のみ、「Player Xの番: マーク判定...」のような詳細な判定結果テキストを表示する。")]
@@ -253,11 +257,24 @@ namespace LuckyTrash.Controllers
         /// </summary>
         private IEnumerator SpinRouletteRoutine()
         {
+            // 演出1: ボタン押下と同時にカメラをルーレットへ寄せる（waitForCameraArrivalがONの場合のみ、
+            // 到着まで以降の処理をブロックする）。
+            if (_cameraDirector != null)
+            {
+                yield return StartCoroutine(_cameraDirector.FocusRoulette());
+            }
+
             _pendingCategory = _gameState.SpinCategory();
 
             if (_rouletteWheelView != null)
             {
                 yield return StartCoroutine(_rouletteWheelView.SpinTo(_pendingCategory));
+            }
+
+            // 回転が停止し結果が確定したら、定位置へ戻す（後続のドロー待ちを止めないよう待機しない）。
+            if (_cameraDirector != null)
+            {
+                _cameraDirector.ReturnFromRoulette();
             }
 
             _turnPhase = TurnPhase.WaitingForDraw;
@@ -289,14 +306,33 @@ namespace LuckyTrash.Controllers
         /// </summary>
         private IEnumerator DrawCardRoutine()
         {
+            // 演出2: ボタン押下と同時にカメラを山札・基準カードスロットへ寄せる。
+            if (_cameraDirector != null)
+            {
+                yield return StartCoroutine(_cameraDirector.FocusDraw());
+            }
+
             var (card, reconstituted) = _gameState.DrawReferenceCard();
             _pendingDrawnCard = card;
             _pendingFlipDeckWasReconstituted = reconstituted;
             UpdateDeckCountLabel();
 
+            // 演出6: めくり札用デッキが尽きて再構築された場合、演出2のフォーカスをさらに山札へ
+            // 寄せ直す（進行中の移動を中断して滑らかに繋ぐ、CameraDirector側の設計により実現）。
+            if (reconstituted && _cameraDirector != null)
+            {
+                yield return StartCoroutine(_cameraDirector.FocusReshuffle());
+            }
+
             if (_referenceCardDrawView != null)
             {
                 yield return StartCoroutine(_referenceCardDrawView.PlayDrawAnimation(card));
+            }
+
+            // ドロー完了後、定位置へ戻す（後続の判定処理を止めないよう待機しない）。
+            if (_cameraDirector != null)
+            {
+                _cameraDirector.ReturnFromDraw();
             }
 
             _turnPhase = TurnPhase.Resolving;
@@ -320,16 +356,45 @@ namespace LuckyTrash.Controllers
                 _statusText.text = _showDebugResultText ? BuildTurnDescription(result) : string.Empty;
             }
 
+            bool playerFinished = result.FinishedPlayer != null;
+
+            // 演出4: 手札が0枚になった座席へズームイン。
+            if (playerFinished && _cameraDirector != null)
+            {
+                yield return StartCoroutine(_cameraDirector.FocusFinish(GetSeatSide(result.FinishedPlayer.SeatIndex)));
+            }
+
             if (_resultPopupView != null)
             {
                 yield return StartCoroutine(_resultPopupView.ShowResult(result.DiscardedCards.Count));
+            }
+
+            // あがったターンは必ず1枚以上捨てているため、上のトラッシュ枚数ポップアップと
+            // 「あがり!」ポップアップが連続して発生する。2つが重ならないよう、トラッシュ表示の
+            // 退場が完全に終わってから（上のyieldが完了してから）あがり表示を始める。
+            if (playerFinished && _resultPopupView != null)
+            {
+                string rankText = result.FinishedPlayer.Rank.HasValue
+                    ? $"{result.FinishedPlayer.Rank}位あがり!"
+                    : "あがり!";
+                yield return StartCoroutine(_resultPopupView.ShowMessage(rankText));
             }
 
             if (result.GameEnded)
             {
                 // 残り1人になり自動的に最下位が確定した座席・最終順位を、
                 // 次回の開始プレイヤー決定・結果表示用に記録してから ResultScene へ遷移する。
+                // GameManagerへの記録はここで同期的に完了するため、演出5のズームアウトで
+                // 遷移を数秒遅らせても結果データの受け渡しには影響しない。
                 RecordGameResultForNextStart();
+
+                // 演出5: シーン遷移前にテーブル全体を見せるズームアウト（waitForCameraArrivalの
+                // 設定に関わらず、常に最後まで見せてから遷移する）。
+                if (_cameraDirector != null)
+                {
+                    yield return StartCoroutine(_cameraDirector.ZoomOutForGameEnd());
+                }
+
                 SceneManager.LoadScene(ResultSceneName);
                 yield break;
             }
@@ -359,6 +424,12 @@ namespace LuckyTrash.Controllers
                 && !_gameState.IsGameOver
                 && _gameState.CurrentPlayer != null
                 && _gameState.CurrentPlayer.IsHuman;
+
+            // 演出3: ターン開始時、そのプレイヤーの座席側へ軽くパンする。CPU/人間を問わず毎ターン発生する。
+            if (_cameraDirector != null && _gameState != null && _gameState.CurrentPlayer != null)
+            {
+                _cameraDirector.PanToTurn(GetSeatSide(_gameState.CurrentPlayer.SeatIndex));
+            }
 
             ShowSpinPhase();
 
@@ -502,6 +573,21 @@ namespace LuckyTrash.Controllers
             }
 
             return _handViewsBySeat[seatIndex];
+        }
+
+        /// <summary>
+        /// SeatIndex を、CameraDirector が使う画面上の座席方向（Bottom/Right/Top/Left）に変換する。
+        /// 人数ごとの座席対応（<see cref="GetSeatMapping"/>）に関わらず、実際にどの HandView
+        /// （＝どの3Dアンカー）が使われているかで判定するため、2人/3人/4人のどの構成でも正しく解決する。
+        /// </summary>
+        private CameraDirector.SeatSide GetSeatSide(int seatIndex)
+        {
+            var handView = GetHandView(seatIndex);
+
+            if (handView == _rightHandView) return CameraDirector.SeatSide.Right;
+            if (handView == _topHandView) return CameraDirector.SeatSide.Top;
+            if (handView == _leftHandView) return CameraDirector.SeatSide.Left;
+            return CameraDirector.SeatSide.Bottom;
         }
 
         private static string BuildTurnDescription(TurnResult result)

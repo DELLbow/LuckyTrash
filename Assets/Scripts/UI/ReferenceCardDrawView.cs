@@ -10,10 +10,9 @@ namespace LuckyTrash.UI
     /// 担当するビュー。GameState.DrawReferenceCard() 自体の呼び出しタイミングには関与せず、
     /// 純粋に見た目のアニメーションだけを行う。
     ///
-    /// 表示は「Free Playing Cards Pack」の3Dカードプレハブを、画面に映らない専用レイヤーの
-    /// 3Dステージ上に配置し、専用カメラでRenderTextureに撮影した映像を、Canvas上のRawImage
-    /// （このコンポーネントと同じGameObjectに付いている <see cref="_rectTransform"/>）に表示する
-    /// 方式（2D CanvasのUI構成自体は変更しない）。
+    /// 表示は「Free Playing Cards Pack」の3Dカードプレハブを、手札・ルーレットと同じメインの3D
+    /// シーン内（テーブル上）に直接配置し、Main Cameraで直接撮影する方式（以前のDeckStage/
+    /// RefCardStage + 専用カメラ + RenderTexture + RawImage という中継構成は廃止した）。
     /// カード裏表は、表/裏それぞれのテクスチャを1枚のマテリアルに持つ両面シェーダー
     /// （Reversibl_Draw、URP対応）に任せている。<b>引いたカードの正しいマテリアルは、
     /// アニメーション開始前（裏向きで山札から出てくる瞬間）に一度だけ設定し、以後は
@@ -21,11 +20,10 @@ namespace LuckyTrash.UI
     /// 山札側を向いている間は自然に裏面（_BaseMapBack）が、フリップして基準カードスロットに
     /// 収まった時点では自然に表面（_BaseMap）が見える。
     ///
-    /// 「山札から出てくる」ように見せるため、3Dの回転（<see cref="_cardSpinPivot"/> のY軸回転、
-    /// 3Dステージ内で完結）とは別に、このGameObject自身のRectTransform（<see cref="_rectTransform"/>）
-    /// の画面上のアンカー位置を、山札表示（<see cref="_deckPosition"/>）の位置から本来の定位置まで
-    /// スライドさせる（2D UI側の移動）。DeckStage/RefCardStageという3Dステージ・カメラの分離構成は
-    /// そのまま維持し、見た目の移動は2D側のRectTransformアニメーションだけで表現している。
+    /// 「山札から出てくる」ように見せるため、3Dの回転（<see cref="_cardSpinPivot"/> のX軸回転、
+    /// テーブルに寝かせたまま表裏をひっくり返す <see cref="Card3DView"/> と同じ流儀）とは別に、
+    /// このGameObject自身のワールド位置を、山札の3D位置（<see cref="_deckPosition"/>）から
+    /// 本来の定位置（基準カードスロットの3D位置）までスライドさせる。
     /// </summary>
     public class ReferenceCardDrawView : MonoBehaviour
     {
@@ -37,13 +35,11 @@ namespace LuckyTrash.UI
             public Material[] byRank;
         }
 
-        [Header("2D Slide (このRawImageのRectTransform)")]
-        [Tooltip("このコンポーネントが乗っているRawImageのRectTransform。画面上の位置をスライドさせる対象。")]
-        [SerializeField] private RectTransform _rectTransform;
-        [Tooltip("スライド開始位置＝山札表示のRectTransform（画面上の位置をそのまま起点として使う）。")]
-        [SerializeField] private RectTransform _deckPosition;
+        [Header("3D Slide (このGameObject自身のTransform)")]
+        [Tooltip("スライド開始位置＝山札の3D位置（このTransformのワールド座標をそのまま起点として使う）。")]
+        [SerializeField] private Transform _deckPosition;
 
-        [Header("3D Card Prop（フリップ回転のみ、3Dステージ内で完結）")]
+        [Header("3D Card Prop（フリップ回転のみ）")]
         [Tooltip("Y軸回転（裏↔表のフリップ）だけを行う対象。位置は動かさない。")]
         [SerializeField] private Transform _cardSpinPivot;
         [Tooltip("マテリアルを差し替える対象の MeshRenderer。")]
@@ -59,7 +55,7 @@ namespace LuckyTrash.UI
         [SerializeField] private SuitFaceMaterials _diamondFaces;
         [SerializeField] private SuitFaceMaterials _clubFaces;
 
-        private Vector2 _restingAnchoredPosition;
+        private Vector3 _restingPosition;
         private bool _initialized;
 
         /// <summary>演出（スライド+フリップ）が進行中かどうか。</summary>
@@ -72,12 +68,7 @@ namespace LuckyTrash.UI
                 return;
             }
 
-            if (_rectTransform == null)
-            {
-                _rectTransform = (RectTransform)transform;
-            }
-
-            _restingAnchoredPosition = _rectTransform.anchoredPosition;
+            _restingPosition = transform.position;
             _initialized = true;
         }
 
@@ -90,16 +81,16 @@ namespace LuckyTrash.UI
         {
             EnsureInitialized();
 
-            _rectTransform.anchoredPosition = _restingAnchoredPosition;
+            transform.position = _restingPosition;
 
             if (_cardSpinPivot != null)
             {
-                _cardSpinPivot.localRotation = Quaternion.identity;
+                _cardSpinPivot.localRotation = Quaternion.Euler(Card3DView.FaceDownEuler);
             }
 
             SetMaterial(_blankMaterial);
 
-            _rectTransform.gameObject.SetActive(false);
+            gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -115,21 +106,19 @@ namespace LuckyTrash.UI
             IsAnimating = true;
 
             // まだカードが引かれていない間は非表示にしてあるので、演出開始と同時に表示する。
-            _rectTransform.gameObject.SetActive(true);
+            gameObject.SetActive(true);
 
             // 引いたカードの正しいマテリアルを、アニメーション開始前に一度だけ設定する。
             // 以後は差し替えない（両面シェーダーが回転に応じて裏/表を自動的に見せる）。
             SetMaterial(GetFaceMaterial(card.Suit, card.Rank));
 
-            Vector2 fromPosition = _deckPosition != null
-                ? _deckPosition.anchoredPosition
-                : _restingAnchoredPosition;
+            Vector3 fromPosition = _deckPosition != null ? _deckPosition.position : _restingPosition;
 
-            _rectTransform.anchoredPosition = fromPosition;
+            transform.position = fromPosition;
 
             if (_cardSpinPivot != null)
             {
-                _cardSpinPivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                _cardSpinPivot.localRotation = Quaternion.Euler(Card3DView.FaceDownEuler);
             }
 
             float elapsed = 0f;
@@ -141,23 +130,24 @@ namespace LuckyTrash.UI
 
                 // 移動: ease-out（滑り込むように減速して定位置に到着する）。
                 float moveT = 1f - Mathf.Pow(1f - t, 3f);
-                _rectTransform.anchoredPosition = Vector2.LerpUnclamped(fromPosition, _restingAnchoredPosition, moveT);
+                transform.position = Vector3.LerpUnclamped(fromPosition, _restingPosition, moveT);
 
-                // フリップ: Y軸回転を180→0度に変化させ、裏向き→表向きへ実際に回転させる。
+                // フリップ: X軸回転を180→0度に変化させ、テーブルに寝かせたまま裏向き→表向きへ
+                // 実際に回転させる（Card3DViewのFaceDown/FaceUpと同じ姿勢）。
                 if (_cardSpinPivot != null)
                 {
                     float flipAngle = Mathf.Lerp(180f, 0f, t);
-                    _cardSpinPivot.localRotation = Quaternion.Euler(0f, flipAngle, 0f);
+                    _cardSpinPivot.localRotation = Quaternion.Euler(flipAngle, 0f, 0f);
                 }
 
                 yield return null;
             }
 
-            _rectTransform.anchoredPosition = _restingAnchoredPosition;
+            transform.position = _restingPosition;
 
             if (_cardSpinPivot != null)
             {
-                _cardSpinPivot.localRotation = Quaternion.identity;
+                _cardSpinPivot.localRotation = Quaternion.Euler(Card3DView.FaceUpEuler);
             }
 
             IsAnimating = false;

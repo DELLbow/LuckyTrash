@@ -26,6 +26,9 @@ namespace LuckyTrash.UI
         [SerializeField] private Color _trashColor = new Color(1f, 0.62f, 0.2f, 0.88f);
         [SerializeField] private Color _noTrashColor = new Color(0.42f, 0.42f, 0.45f, 0.88f);
 
+        [Tooltip("ShowMessage（あがり演出等での汎用メッセージ表示）で使う背景色。")]
+        [SerializeField] private Color _messageColor = new Color(1f, 0.85f, 0.2f, 0.92f);
+
         private Vector2 _restingAnchoredPosition;
         private Vector2 _offscreenAnchoredPosition;
         private bool _initialized;
@@ -59,18 +62,37 @@ namespace LuckyTrash.UI
         /// </summary>
         public IEnumerator ShowResult(int discardedCount)
         {
-            EnsureInitialized();
-
             bool hasTrash = discardedCount > 0;
+            string text = hasTrash ? $"{discardedCount}枚トラッシュ!" : "ノートラッシュ…";
+            Color color = hasTrash ? _trashColor : _noTrashColor;
+            yield return ShowInternal(text, color);
+        }
+
+        /// <summary>
+        /// 任意のテキスト（例:「1位あがり!」）を <see cref="_messageColor"/> で表示する、
+        /// <see cref="ShowResult"/> と同じ登場→待機→退場の演出を再生するコルーチン。
+        /// あがり演出（カメラのズームインと合わせて使う想定）用に、既存のトラッシュ枚数表示ポップアップの
+        /// 見た目・動きを流用するために追加した。既存の <see cref="ShowResult"/> の呼び出し側には
+        /// 影響しない。連続で呼び出す場合、呼び出し元が前の呼び出しの完了（コルーチンのyield完了）を
+        /// 待ってから呼び出すことで、2つのポップアップが重ならずに順番に再生される。
+        /// </summary>
+        public IEnumerator ShowMessage(string text)
+        {
+            yield return ShowInternal(text, _messageColor);
+        }
+
+        private IEnumerator ShowInternal(string text, Color color)
+        {
+            EnsureInitialized();
 
             if (_label != null)
             {
-                _label.text = hasTrash ? $"{discardedCount}枚トラッシュ!" : "ノートラッシュ…";
+                _label.text = text;
             }
 
             if (_background != null)
             {
-                _background.color = hasTrash ? _trashColor : _noTrashColor;
+                _background.color = color;
             }
 
             gameObject.SetActive(true);
