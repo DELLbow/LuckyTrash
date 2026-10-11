@@ -59,7 +59,9 @@
       "Bash('/c/Program Files/Unity/Hub/Editor/6000.3.12f1/Editor/Unity.exe' -batchmode -nographics -silent-crashes -quit -projectPath C:/Work/Unity/LuckyTrash -executeMethod TempBuildScript.BuildWindows -logFile C:/Work/Unity/LuckyTrash/TestResults/build-run2.log)",
       "Bash('/c/Program Files/Unity/Hub/Editor/6000.3.12f1/Editor/Unity.exe' -batchmode -nographics -silent-crashes -projectPath C:/Work/Unity/LuckyTrash -runTests -testPlatform EditMode -testResults C:/Work/Unity/LuckyTrash/TestResults/editmode-results-final.xml -logFile C:/Work/Unity/LuckyTrash/TestResults/editmode-run-final.log)",
       "Bash('/c/Program Files/Unity/Hub/Editor/6000.3.12f1/Editor/Unity.exe' -batchmode -nographics -silent-crashes -quit -projectPath C:/Work/Unity/LuckyTrash -executeMethod TempBuildScript.BuildWindows -logFile C:/Work/Unity/LuckyTrash/TestResults/build-run-final.log)",
-      "Artifact"
+      "Artifact",
+      "Read(//c/Users/81907/AppData/Local/Unity/Editor/**)",
+      "Bash(curl *)"
     ]
   }
 }
