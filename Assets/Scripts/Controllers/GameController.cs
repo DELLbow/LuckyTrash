@@ -76,6 +76,10 @@ namespace LuckyTrash.Controllers
         [Tooltip("CPUの手番で、各アクションを実行するまでのランダム待機時間（秒）の最大値。")]
         [SerializeField] private float _cpuActionDelayMax = 1f;
 
+        [Header("Roulette Result Hold")]
+        [Tooltip("ルーレット停止後、カメラが定位置へ戻り始めるまで待つ時間（秒）。この間に停止した扇形をハイライトする。人間・CPU両方の手番に適用される。")]
+        [SerializeField] private float _rouletteResultHoldSeconds = 1.0f;
+
         [Header("Player Count Selection")]
         [SerializeField] private GameObject _playerCountPanel;
         [SerializeField] private Button _twoPlayerButton;
@@ -269,9 +273,17 @@ namespace LuckyTrash.Controllers
             if (_rouletteWheelView != null)
             {
                 yield return StartCoroutine(_rouletteWheelView.SpinTo(_pendingCategory));
+
+                // 停止した扇形をハイライトしつつ、プレイヤーが結果を確認できるよう少し待ってから戻す。
+                StartCoroutine(_rouletteWheelView.HighlightLastStoppedSlice());
             }
 
-            // 回転が停止し結果が確定したら、定位置へ戻す（後続のドロー待ちを止めないよう待機しない）。
+            if (_rouletteResultHoldSeconds > 0f)
+            {
+                yield return new WaitForSeconds(_rouletteResultHoldSeconds);
+            }
+
+            // 結果確認の間を置いてから、定位置へ戻す（後続のドロー待ちを止めないよう待機しない）。
             if (_cameraDirector != null)
             {
                 _cameraDirector.ReturnFromRoulette();

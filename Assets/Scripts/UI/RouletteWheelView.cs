@@ -17,7 +17,7 @@ namespace LuckyTrash.UI
     /// </summary>
     public class RouletteWheelView : MonoBehaviour
     {
-        private const float SliceAngle = 360f / 6f;
+        private const float SliceAngle = RouletteAngleMath.SliceAngle;
 
         [SerializeField] private Transform _disc;
         [SerializeField] private float _spinDurationSeconds = 1.2f;
@@ -25,10 +25,19 @@ namespace LuckyTrash.UI
         [SerializeField] private int _maxExtraTurns = 5; // Random.Range上限は排他的なので実際は3,4,5が出る
         [SerializeField] private AnimationCurve _easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+        [Header("停止後のハイライト演出")]
+        [Tooltip("停止した扇形を明るく光らせてから元に戻すまでの合計時間（秒）。")]
+        [SerializeField] private float _highlightFlashDurationSeconds = 0.4f;
+        [Tooltip("ハイライトのピーク時の半透明オーバーレイのアルファ値（0=見えない、1=不透明）。")]
+        [Range(0f, 1f)] [SerializeField] private float _highlightPeakAlpha = 0.6f;
+
         private static readonly IReadOnlyList<RouletteCategory> SliceCategories = RouletteSelector.AllFaces;
 
         /// <summary>演出（回転アニメーション）が進行中かどうか。</summary>
         public bool IsSpinning { get; private set; }
+
+        /// <summary>直近のSpinToで停止し、ポインター位置に来た扇形のインデックス（0-5）。</summary>
+        public int LastStoppedSliceIndex { get; private set; } = -1;
 
         /// <summary>
         /// 指定されたカテゴリの扇形（同カテゴリが複数あればランダムに1つ）にポインターが合うまで、
@@ -44,14 +53,12 @@ namespace LuckyTrash.UI
             IsSpinning = true;
 
             int chosenSliceIndex = ChooseSliceIndex(resultCategory);
-            float sliceMidAngle = chosenSliceIndex * SliceAngle + SliceAngle / 2f;
+            float restAngle = RouletteAngleMath.GetRestAngleForSlice(chosenSliceIndex);
 
             float startAngle = _disc.localEulerAngles.y;
             int extraTurns = UnityEngine.Random.Range(_minExtraTurns, _maxExtraTurns + 1);
 
-            // startAngle からポインター位置(sliceMidAngle)まで、少なくとも0度は進むように正規化した差分。
-            float normalizedDelta = Mathf.Repeat(sliceMidAngle - startAngle, 360f);
-            float targetAngle = startAngle + 360f * extraTurns + normalizedDelta;
+            float targetAngle = RouletteAngleMath.ComputeTargetAngle(startAngle, restAngle, extraTurns);
 
             float elapsed = 0f;
             while (elapsed < _spinDurationSeconds)
@@ -65,7 +72,62 @@ namespace LuckyTrash.UI
             }
 
             _disc.localRotation = Quaternion.Euler(0f, targetAngle, 0f);
+            LastStoppedSliceIndex = chosenSliceIndex;
             IsSpinning = false;
+        }
+
+        /// <summary>
+        /// 直近に<see cref="SpinTo"/>で止まった扇形の上に、同じ形の半透明オーバーレイ
+        /// (Disc/GeneratedDecorations/HighlightOverlay、<see cref="RouletteWheelDecorator"/>が生成)を
+        /// 重ねて一度光らせてから消す。扇形は1枚の焼き込みテクスチャのため、マスごとに色を変える方式は
+        /// 使えない。オーバーレイの角度はRouletteAngleMathと同じ式（bisector = index*60+30）で求めるため、
+        /// 抽選・回転の仕組みには一切影響しない。
+        /// </summary>
+        public IEnumerator HighlightLastStoppedSlice()
+        {
+            if (_disc == null || LastStoppedSliceIndex < 0)
+            {
+                yield break;
+            }
+
+            var overlay = _disc.Find("GeneratedDecorations/HighlightOverlay");
+            if (overlay == null)
+            {
+                yield break;
+            }
+
+            var renderer = overlay.GetComponent<Renderer>();
+            if (renderer == null)
+            {
+                yield break;
+            }
+
+            float phi = LastStoppedSliceIndex * SliceAngle + SliceAngle / 2f;
+            overlay.localRotation = Quaternion.Euler(0f, phi, 0f);
+
+            var mat = renderer.material; // このオーバーレイ専用のインスタンスなので直接書き換えてよい。
+            Color baseColor = mat.color;
+            float half = Mathf.Max(0.01f, _highlightFlashDurationSeconds / 2f);
+
+            float t = 0f;
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Lerp(0f, _highlightPeakAlpha, Mathf.Clamp01(t / half));
+                mat.color = new Color(baseColor.r, baseColor.g, baseColor.b, a);
+                yield return null;
+            }
+
+            t = 0f;
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Lerp(_highlightPeakAlpha, 0f, Mathf.Clamp01(t / half));
+                mat.color = new Color(baseColor.r, baseColor.g, baseColor.b, a);
+                yield return null;
+            }
+
+            mat.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
         }
 
         private static int ChooseSliceIndex(RouletteCategory resultCategory)

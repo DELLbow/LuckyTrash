@@ -1,0 +1,21 @@
+{
+    "name": "LuckyTrash.UI.Editor",
+    "rootNamespace": "LuckyTrash.UI.Editor",
+    "references": [
+        "LuckyTrash.UI",
+        "LuckyTrash.Cards",
+        "LuckyTrash.Game",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
