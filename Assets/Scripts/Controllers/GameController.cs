@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using LuckyTrash.Cards;
@@ -69,6 +70,10 @@ namespace LuckyTrash.Controllers
         [Header("Turn Indicator")]
         [Tooltip("「CPU 2の番です」のような、現在の手番プレイヤーを示す常時表示。")]
         [SerializeField] private TMP_Text _turnIndicatorText;
+
+        [Header("Nameplates")]
+        [Tooltip("画面左上に、参加プレイヤーのネームプレートを手番の順（1P, 2P, ...）に並べる表示。")]
+        [SerializeField] private NameplateBarView _nameplateBar;
 
         [Header("CPU Turn")]
         [Tooltip("CPUの手番で、1つ目のアクションを実行するまでのランダム待機時間（秒）の最小値。")]
@@ -209,6 +214,8 @@ namespace LuckyTrash.Controllers
                 handView?.SetHand(player.Hand, faceDown: !player.IsHuman);
                 handView?.SetPlayerLabel(GetDisplayName(player));
             }
+
+            BuildNameplates(startingSeatIndex);
 
             SetStatusText($"ゲーム開始（{playerCount}人）。{GetDisplayName(_gameState.CurrentPlayer)} から開始します{startReason}。");
 
@@ -363,6 +370,13 @@ namespace LuckyTrash.Controllers
             // 手札が変化するのは手番プレイヤーの座席のみなので、そこだけ更新すればよい。
             GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand, faceDown: !result.TurnPlayer.IsHuman);
 
+            // 残り枚数・順位（最後の1人に自動で付く最下位も含む）をネームプレートに反映する。
+            RefreshNameplateStates();
+            if (result.GameEnded && _nameplateBar != null)
+            {
+                _nameplateBar.SetCurrentPlayer(-1);
+            }
+
             if (_statusText != null)
             {
                 _statusText.text = _showDebugResultText ? BuildTurnDescription(result) : string.Empty;
@@ -430,6 +444,11 @@ namespace LuckyTrash.Controllers
 
             UpdateDeckCountLabel();
             UpdateTurnIndicator();
+
+            if (_nameplateBar != null && _gameState != null)
+            {
+                _nameplateBar.SetCurrentPlayer(_gameState.CurrentPlayer != null ? _gameState.CurrentPlayer.SeatIndex : -1);
+            }
 
             // 人間の手番のみボタンを操作可能にする。CPUの手番は非活性のまま自動進行させる。
             _isHumanTurn = _gameState != null
@@ -537,6 +556,43 @@ namespace LuckyTrash.Controllers
         private static string GetDisplayName(Player player)
         {
             return !string.IsNullOrEmpty(player.DisplayName) ? player.DisplayName : $"Player {player.SeatIndex}";
+        }
+
+        /// <summary>
+        /// 画面左上のネームプレートを、開始プレイヤーから時計回りの手番の順（1P, 2P, ...）で作る。
+        /// 手番の順は GameState と同じ規則（SeatIndex の昇順を開始座席から1周）で、読み取りだけで決める。
+        /// </summary>
+        private void BuildNameplates(int startingSeatIndex)
+        {
+            if (_nameplateBar == null || _gameState == null)
+            {
+                return;
+            }
+
+            var order = NameplateOrder.GetTurnOrder(_gameState.Players.Select(p => p.SeatIndex), startingSeatIndex);
+            var infos = new List<NameplateInfo>(order.Count);
+            for (int i = 0; i < order.Count; i++)
+            {
+                var player = _gameState.Players.First(p => p.SeatIndex == order[i]);
+                infos.Add(new NameplateInfo(i + 1, player.SeatIndex, GetDisplayName(player),
+                    MiniTableSeats.ToScreenPosition(GetSeatSide(player.SeatIndex)), player.IsHuman));
+            }
+
+            _nameplateBar.Build(infos);
+            RefreshNameplateStates();
+        }
+
+        private void RefreshNameplateStates()
+        {
+            if (_nameplateBar == null || _gameState == null)
+            {
+                return;
+            }
+
+            foreach (var player in _gameState.Players)
+            {
+                _nameplateBar.SetPlayerState(player.SeatIndex, player.Hand.Count, player.Rank);
+            }
         }
 
         private void UpdateDeckCountLabel()
