@@ -57,6 +57,8 @@ namespace LuckyTrash.Controllers
         [SerializeField] private ReferenceCardDrawView _referenceCardDrawView;
         [SerializeField] private ResultPopupView _resultPopupView;
         [SerializeField] private TMP_Text _deckCountText;
+        [Tooltip("画面右上の山札の残り枚数表示（カードの束型、数字がドラムのように回る）。")]
+        [SerializeField] private DeckCounterView _deckCounter;
 
         [Header("Camera")]
         [Tooltip("ターン進行に合わせたカメラ演出を担当する。未設定の場合はカメラ演出なしで従来通り動作する。")]
@@ -356,6 +358,13 @@ namespace LuckyTrash.Controllers
             var (card, reconstituted) = _gameState.DrawReferenceCard();
             _pendingDrawnCard = card;
             _pendingFlipDeckWasReconstituted = reconstituted;
+
+            // 山札が捨て札から作り直されたときは、残り枚数表示で SHUFFLE! の演出を見せる
+            // （下の FocusReshuffle と同じタイミング。演出は待たずにターンを進める）。
+            if (reconstituted && _deckCounter != null)
+            {
+                _deckCounter.PlayReshuffle(_gameState.FlipDeckCount);
+            }
             UpdateDeckCountLabel();
 
             // 演出6: めくり札用デッキが尽きて再構築された場合、演出2のフォーカスをさらに山札へ
@@ -644,6 +653,11 @@ namespace LuckyTrash.Controllers
             if (_deckCountText != null && _gameState != null)
             {
                 _deckCountText.text = $"残り{_gameState.FlipDeckCount}枚";
+            }
+
+            if (_deckCounter != null && _gameState != null)
+            {
+                _deckCounter.SetCount(_gameState.FlipDeckCount);
             }
         }
 
