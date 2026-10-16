@@ -66,6 +66,9 @@ namespace LuckyTrash.UI
         [SerializeField] private float _drawReturnDurationSeconds = 0.45f;
 
         [Header("演出3: ターン開始時のパン（控えめ）")]
+        [Tooltip("ONでターン開始時に座席の方向へ軽くパンする。OFFの間は、パンの代わりに定位置へ戻すだけにする" +
+            "（あがり時のズームなど、明示的な戻りを持たない演出のあとも、次のターン開始で定位置へ戻る）。")]
+        [SerializeField] private bool _enableTurnPan = false;
         [Tooltip("定位置から座席方向へ寄る距離（ワールド単位）。控えめに。")]
         [SerializeField] private float _turnPanDistance = 0.3f;
         [Tooltip("座席方向を見る度合い（0=向きを変えない、1=完全に座席を注視）。小さめの値を推奨。")]
@@ -158,6 +161,13 @@ namespace LuckyTrash.UI
         /// </summary>
         public void PanToTurn(SeatSide side)
         {
+            if (!_enableTurnPan)
+            {
+                // パンを止めている間も、あがり時のズームなどからは定位置へ戻す（既に定位置なら実質動かない）。
+                ReturnToDefault(_turnPanDurationSeconds);
+                return;
+            }
+
             Transform anchor = GetSeatAnchor(side);
             if (anchor == null)
             {

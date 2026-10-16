@@ -64,12 +64,22 @@ namespace LuckyTrash.Controllers
 
         [Header("Debug")]
         [SerializeField] private TMP_Text _statusText;
+        [Tooltip("ONの場合のみ、開発用のステータス表示（「ゲーム開始（4人）。〜から開始します」など）を表示する。")]
+        [SerializeField] private bool _showStatusText = false;
         [Tooltip("ONの場合のみ、「Player Xの番: マーク判定...」のような詳細な判定結果テキストを表示する。")]
         [SerializeField] private bool _showDebugResultText = false;
 
         [Header("Turn Indicator")]
         [Tooltip("「CPU 2の番です」のような、現在の手番プレイヤーを示す常時表示。")]
         [SerializeField] private TMP_Text _turnIndicatorText;
+        [Tooltip("ONの場合のみ、画面中央の「〇〇の番です」の常時表示を出す（通常は紙幣の演出とネームプレートの強調で示す）。")]
+        [SerializeField] private bool _showTurnIndicatorText = false;
+
+        [Header("Turn Banknote / Spotlight")]
+        [Tooltip("手番が変わったときに、紙幣が画面を流れていく演出。")]
+        [SerializeField] private TurnBanknoteView _turnBanknote;
+        [Tooltip("手番の人の手札の下のフェルトを照らす演出（任意）。")]
+        [SerializeField] private TurnSpotlightView _turnSpotlight;
 
         [Header("Nameplates")]
         [Tooltip("画面左上に、参加プレイヤーのネームプレートを手番の順（1P, 2P, ...）に並べる表示。")]
@@ -105,6 +115,8 @@ namespace LuckyTrash.Controllers
         private GameState _gameState;
         private HandView[] _allHandViews;
         private HandView[] _handViewsBySeat;
+        // SeatIndex → 手番の順番（1P=1）。ネームプレートと紙幣で同じ番号・スートを使う。
+        private readonly Dictionary<int, int> _turnOrderBySeat = new Dictionary<int, int>();
 
         private TurnPhase _turnPhase;
         private bool _isHumanTurn;
@@ -117,6 +129,16 @@ namespace LuckyTrash.Controllers
         private void Start()
         {
             _allHandViews = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
+
+            // 常時表示の手番テキストと開発用のステータス表示は、設定でONにしたときだけ出す（コードは残す）。
+            if (_turnIndicatorText != null)
+            {
+                _turnIndicatorText.gameObject.SetActive(_showTurnIndicatorText);
+            }
+            if (_statusText != null)
+            {
+                _statusText.gameObject.SetActive(_showStatusText);
+            }
 
             foreach (var handView in _allHandViews)
             {
@@ -376,6 +398,10 @@ namespace LuckyTrash.Controllers
             {
                 _nameplateBar.SetCurrentPlayer(-1);
             }
+            if (result.GameEnded && _turnSpotlight != null)
+            {
+                _turnSpotlight.SetSeat(null);
+            }
 
             if (_statusText != null)
             {
@@ -448,6 +474,22 @@ namespace LuckyTrash.Controllers
             if (_nameplateBar != null && _gameState != null)
             {
                 _nameplateBar.SetCurrentPlayer(_gameState.CurrentPlayer != null ? _gameState.CurrentPlayer.SeatIndex : -1);
+            }
+
+            // 手番の紙幣と照らす演出。どちらもターン進行と並行して再生するだけで、ここでは待たない。
+            if (_gameState != null && _gameState.CurrentPlayer != null && !_gameState.IsGameOver)
+            {
+                var current = _gameState.CurrentPlayer;
+                if (_turnBanknote != null)
+                {
+                    int order = _turnOrderBySeat.TryGetValue(current.SeatIndex, out int o) ? o : 1;
+                    string message = current.IsHuman ? "あなたの番です" : $"{GetDisplayName(current)}の番です";
+                    _turnBanknote.Play(order, message, current.IsHuman);
+                }
+                if (_turnSpotlight != null)
+                {
+                    _turnSpotlight.SetSeat(GetSeatSide(current.SeatIndex));
+                }
             }
 
             // 人間の手番のみボタンを操作可能にする。CPUの手番は非活性のまま自動進行させる。
@@ -571,9 +613,11 @@ namespace LuckyTrash.Controllers
 
             var order = NameplateOrder.GetTurnOrder(_gameState.Players.Select(p => p.SeatIndex), startingSeatIndex);
             var infos = new List<NameplateInfo>(order.Count);
+            _turnOrderBySeat.Clear();
             for (int i = 0; i < order.Count; i++)
             {
                 var player = _gameState.Players.First(p => p.SeatIndex == order[i]);
+                _turnOrderBySeat[player.SeatIndex] = i + 1;
                 infos.Add(new NameplateInfo(i + 1, player.SeatIndex, GetDisplayName(player),
                     MiniTableSeats.ToScreenPosition(GetSeatSide(player.SeatIndex)), player.IsHuman));
             }
