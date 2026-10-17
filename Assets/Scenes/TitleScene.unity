@@ -1265,6 +1265,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 131873758}
   m_CullTransparentMesh: 1
+--- !u!1 &168673070
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 168673071}
+  - component: {fileID: 168673072}
+  m_Layer: 0
+  m_Name: Confirm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &168673071
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168673070}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 560670264}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &168673072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168673070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54c6b81483bb3654ea3bca6be95dcdc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LuckyTrash.UI::LuckyTrash.UI.Menu.ConfirmDialogView
+  _roundedSprite: {fileID: 21300000, guid: bdd0bda5be4ad4e4d933257a4323a535, type: 3}
+  _textFont: {fileID: 11400000, guid: 2d86b8662c0ab6742b448e10a9a76a71, type: 2}
+  _symbolFont: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  _paperSize: {x: 760, y: 340}
+  _backdropAlpha: 0.5
+  _confirmInk: {r: 0.72, g: 0.09, b: 0.1, a: 1}
+  _cancelInk: {r: 0.12, g: 0.12, b: 0.16, a: 1}
+  _animSeconds: 0.15
 --- !u!1 &178442707
 GameObject:
   m_ObjectHideFlags: 0
@@ -1672,6 +1728,7 @@ GameObject:
   - component: {fileID: 287921831}
   - component: {fileID: 287921830}
   - component: {fileID: 287921832}
+  - component: {fileID: 287921833}
   m_Layer: 0
   m_Name: RulesPopup
   m_TagString: Untagged
@@ -1751,6 +1808,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: LuckyTrash.UI::LuckyTrash.UI.SimplePopupView
   _panel: {fileID: 287921828}
   _closeButton: {fileID: 791417731}
+--- !u!114 &287921833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287921828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c90cfd9b8ab6f8c47b761420e86acb23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LuckyTrash.UI::LuckyTrash.UI.Menu.TitleRulesPopupBinder
+  _rules: {fileID: 11400000, guid: da5e7a054f7d4714e82e2a6519587487, type: 2}
+  _bodyText: {fileID: 131873759}
+  _font: {fileID: 11400000, guid: 2d86b8662c0ab6742b448e10a9a76a71, type: 2}
+  _fontSize: 28
+  _textColor: {r: 0.93, g: 0.93, b: 0.95, a: 1}
+  _extraHeight: 20
+  _bottomLimit: {fileID: 791417730}
+  _bottomGap: 24
 --- !u!1 &321825475
 GameObject:
   m_ObjectHideFlags: 0
@@ -2646,6 +2723,7 @@ RectTransform:
   - {fileID: 287921829}
   - {fileID: 1066838268}
   - {fileID: 321825476}
+  - {fileID: 168673071}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6343,6 +6421,7 @@ GameObject:
   - component: {fileID: 1066838270}
   - component: {fileID: 1066838269}
   - component: {fileID: 1066838267}
+  - component: {fileID: 1066838271}
   m_Layer: 0
   m_Name: SettingsPopup
   m_TagString: Untagged
@@ -6422,6 +6501,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1066838266}
   m_CullTransparentMesh: 1
+--- !u!114 &1066838271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1066838266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a0175ec8e6bccd43bfc1e900bd39cf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: LuckyTrash.UI::LuckyTrash.UI.Menu.TitleSettingsPanel
+  _cardPanel: {fileID: 229506020}
+  _closeButton: {fileID: 1030976023}
+  _confirm: {fileID: 168673072}
+  _font: {fileID: 11400000, guid: 2d86b8662c0ab6742b448e10a9a76a71, type: 2}
+  _panelSize: {x: 640, y: 440}
+  _quitLabel: "\u30B2\u30FC\u30E0\u3092\u7D42\u4E86"
+  _quitConfirmMessage: "\u30B2\u30FC\u30E0\u3092\u7D42\u4E86\u3057\u307E\u3059\u304B\uFF1F"
+  _note: "\u30B5\u30A6\u30F3\u30C9\u306A\u3069\u306E\u8A2D\u5B9A\u306F\u3001\u4ECA\u5F8C\u8FFD\u52A0\u4E88\u5B9A\u3067\u3059"
+  _noteColor: {r: 0.45, g: 0.45, b: 0.48, a: 1}
 --- !u!1 &1069027947
 GameObject:
   m_ObjectHideFlags: 0

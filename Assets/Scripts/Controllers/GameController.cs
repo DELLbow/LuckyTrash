@@ -6,6 +6,7 @@ using System.Text;
 using LuckyTrash.Cards;
 using LuckyTrash.Game;
 using LuckyTrash.UI;
+using LuckyTrash.UI.Menu;
 using LuckyTrash.UI.Scoring;
 using TMPro;
 using UnityEngine;
@@ -93,6 +94,10 @@ namespace LuckyTrash.Controllers
         [Header("Score")]
         [Tooltip("得点のルール（順位の得点とボーナス）。Assets/Settings/ScoreRules.asset。")]
         [SerializeField] private ScoreRulesAsset _scoreRules;
+
+        [Header("Menu")]
+        [Tooltip("左下のメニューボタンと、一時停止中のメニュー（続ける・ルール・タイトルへ戻る・ゲームを終了）。")]
+        [SerializeField] private GameMenuView _gameMenu;
 
         [Header("Game End Finale")]
         [Tooltip("順位が確定したあとの最後の演出と、取引明細書（GameScene の上で見せる）。")]
@@ -191,6 +196,13 @@ namespace LuckyTrash.Controllers
 
         private void Start()
         {
+            // メニューの「タイトルへ戻る」は、明細書の「人数を選び直す」と同じ処理（クイック再開の解除・通算のリセット・タイトルへ）。
+            if (_gameMenu != null)
+            {
+                _gameMenu.Initialize(ResultNavigation.ReselectPlayers);
+                _gameMenu.SetAvailable(true);
+            }
+
             _allHandViews = new[] { _bottomHandView, _rightHandView, _topHandView, _leftHandView };
 
             // 常時表示の手番テキストと開発用のステータス表示は、設定でONにしたときだけ出す（コードは残す）。
@@ -798,6 +810,11 @@ namespace LuckyTrash.Controllers
             _finaleLastHand = _finaleLastPlace.Hand.ToList();
             _finaleStatementStarted = false;
             _finaleRoutines.Clear();
+            // 順位確定後の演出と明細書の間は、メニューボタンを隠す（明細書に自分のボタンがあるため）。
+            if (_gameMenu != null)
+            {
+                _gameMenu.SetAvailable(false);
+            }
             _finaleView.ShowSkipCatcher(SkipFinale);
             TrackFinale(FinaleIntro(_finaleLastPlace, rankings[0]));
         }
