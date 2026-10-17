@@ -72,6 +72,8 @@ namespace LuckyTrash.UI
         private readonly List<Card> _visible = new List<Card>();
         private int _hiddenCount;
         private int _pendingLandings;
+        // 演出の途中で打ち切れるよう、飛んでいる途中のカードと金色の板を覚えておく。
+        private readonly HashSet<GameObject> _inFlight = new HashSet<GameObject>();
         private Transform _thickness;
         private Material _glowMaterial;
 
@@ -122,9 +124,11 @@ namespace LuckyTrash.UI
         /// 基準カードの写し（reference のスロットの位置から。元のカードは写しが飛び立つときに隠す）も一緒に飛ばす。全部のカードが飛び立ったら onLaunched を呼ぶ
         /// （残った手札の並び直しに使う）。全部が着地したら終わる。
         /// </summary>
+        /// <param name="staggerSeconds">1枚ずつ飛び始めをずらす間隔（秒）。負の値なら Inspector の値を使う。</param>
         public IEnumerator PlayDiscards(IReadOnlyList<Card3DView> handCards, IReadOnlyList<Card> cards, bool revealFaces,
-            ReferenceCardDrawView reference, Card? referenceCard, System.Action onLaunched)
+            ReferenceCardDrawView reference, Card? referenceCard, System.Action onLaunched, float staggerSeconds = -1f)
         {
+            float stagger = staggerSeconds >= 0f ? staggerSeconds : _flyStagger;
             var glows = new List<Transform>();
             var startPositions = new List<Vector3>();
             var startRotations = new List<Quaternion>();
@@ -138,6 +142,8 @@ namespace LuckyTrash.UI
                 startPositions.Add(handCards[i].transform.position);
                 startRotations.Add(handCards[i].transform.localRotation);
                 glows.Add(CreateGlow(handCards[i].transform));
+                _inFlight.Add(handCards[i].gameObject);
+                _inFlight.Add(glows[i].gameObject);
             }
 
             // 光って浮き上がる（裏向きのカードはこの間に表向きにめくれる）。
@@ -171,6 +177,7 @@ namespace LuckyTrash.UI
                 copy.SetCard(referenceCard.Value);
                 copy.transform.rotation = referenceSource.rotation;
                 copy.transform.localScale = referenceSource.lossyScale;
+                _inFlight.Add(copy.gameObject);
                 reference.HideCard();
                 flights.Add(StartCoroutine(Fly(copy.transform, referenceCard.Value, null, 0f)));
                 launchIndex++;
@@ -178,18 +185,36 @@ namespace LuckyTrash.UI
 
             for (int i = 0; i < handCards.Count; i++)
             {
-                flights.Add(StartCoroutine(Fly(handCards[i].transform, cards[i], glows[i], launchIndex * _flyStagger)));
+                flights.Add(StartCoroutine(Fly(handCards[i].transform, cards[i], glows[i], launchIndex * stagger)));
                 launchIndex++;
             }
 
             // 全部が飛び立ったら、残った手札を並び直してよい。
-            yield return new WaitForSeconds(Mathf.Max(0, launchIndex - 1) * _flyStagger);
+            yield return new WaitForSeconds(Mathf.Max(0, launchIndex - 1) * stagger);
             onLaunched?.Invoke();
 
             foreach (var flight in flights)
             {
                 yield return flight;
             }
+        }
+
+        /// <summary>
+        /// 飛んでいる途中のカードの演出をすべて打ち切り、途中のカードと金色の板を消す（演出を飛ばしたとき用）。
+        /// 山の見た目は呼び出し側が <see cref="Sync"/> で整える。
+        /// </summary>
+        public void CancelFlights()
+        {
+            StopAllCoroutines();
+            foreach (var go in _inFlight)
+            {
+                if (go != null)
+                {
+                    Destroy(go);
+                }
+            }
+            _inFlight.Clear();
+            _pendingLandings = 0;
         }
 
         /// <summary>ノートラッシュのとき、手札全体を小さくぶるっと震わせる（カードは元の位置に戻る）。</summary>
@@ -326,8 +351,10 @@ namespace LuckyTrash.UI
             _pendingLandings--;
             if (glow != null)
             {
+                _inFlight.Remove(glow.gameObject);
                 Destroy(glow.gameObject);
             }
+            _inFlight.Remove(card.gameObject);
             Destroy(card.gameObject);
             AddToTop(value);
         }

@@ -133,7 +133,11 @@ namespace LuckyTrash.UI
         /// <param name="rank">確定した順位（四隅にも表示する）。</param>
         /// <param name="isHuman">自分があがったか（大きく、長めに止める）。</param>
         /// <param name="onCenter">中央で止まった瞬間に、紙幣の RectTransform を渡して呼ばれる。</param>
-        public IEnumerator PlayFinish(int orderNumber, string name, int rank, bool isHuman, Action<RectTransform> onCenter)
+        /// <param name="sizeScale">紙幣の大きさの倍率（ゲーム終了時の1位の発表で大きく出すとき用。既定は 1）。</param>
+        /// <param name="holdSeconds">中央で止まっている時間（秒）。負の値なら Inspector の値を使う。</param>
+        /// <param name="message">紙幣に書く文字。null なら「（名前）N位あがり！」。</param>
+        public IEnumerator PlayFinish(int orderNumber, string name, int rank, bool isHuman, Action<RectTransform> onCenter,
+            float sizeScale = 1f, float holdSeconds = -1f, string message = null)
         {
             if (_playing != null)
             {
@@ -147,16 +151,32 @@ namespace LuckyTrash.UI
 
             _note = BuildNote(new NoteStyle
             {
-                Size = isHuman ? _finishHumanSize : _finishCpuSize,
+                Size = (isHuman ? _finishHumanSize : _finishCpuSize) * sizeScale,
                 Paper = _finishPaperColor,
                 Frame = _finishFrameColor,
                 Ink = _finishInkColor,
                 BoldFrame = true,
                 CornerLabel = rank.ToString(),
                 SuitIndex = SuitIndexOf(orderNumber),
-                Message = $"<size=70%>{name}</size>\n{rank}位あがり！"
+                Message = message ?? $"<size=70%>{name}</size>\n{rank}位あがり！"
             });
-            yield return Animate(_note, isHuman ? _finishHumanHoldSeconds : _finishCpuHoldSeconds, onCenter);
+            float hold = holdSeconds >= 0f ? holdSeconds : isHuman ? _finishHumanHoldSeconds : _finishCpuHoldSeconds;
+            yield return Animate(_note, hold, onCenter);
+        }
+
+        /// <summary>流れている紙幣があれば、すぐに消す（演出を飛ばしたとき用）。</summary>
+        public void Cancel()
+        {
+            if (_playing != null)
+            {
+                StopCoroutine(_playing);
+                _playing = null;
+            }
+            if (_note != null)
+            {
+                Destroy(_note.gameObject);
+                _note = null;
+            }
         }
 
         private static int SuitIndexOf(int orderNumber)

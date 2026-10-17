@@ -51,6 +51,9 @@ namespace LuckyTrash.UI
 
         public int SeatIndex { get; private set; }
 
+        /// <summary>押されている順位のメダル（まだ押されていなければ null）。</summary>
+        public RectTransform MedalRect => _medal;
+
         /// <param name="occupiedSeats">ミニテーブル図に丸を出す座席（参加しているプレイヤーの、画面上の位置）。</param>
         public void Build(NameplateBarView bar, NameplateInfo info, HashSet<NameplateSeatDirection> occupiedSeats)
         {

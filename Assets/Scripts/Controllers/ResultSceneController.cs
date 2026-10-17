@@ -2,7 +2,6 @@ using System.Text;
 using LuckyTrash.UI;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace LuckyTrash.Controllers
@@ -22,8 +21,6 @@ namespace LuckyTrash.Controllers
     /// </summary>
     public class ResultSceneController : MonoBehaviour
     {
-        private const string GameSceneName = "GameScene";
-        private const string TitleSceneName = "TitleScene";
         private const int HumanSeatIndex = 0;
 
         [SerializeField] private TMP_Text _rankingText;
@@ -85,8 +82,7 @@ namespace LuckyTrash.Controllers
         /// </summary>
         private void OnPlayAgainClicked()
         {
-            GameManager.Instance.RequestQuickRestart();
-            SceneManager.LoadScene(GameSceneName);
+            ResultNavigation.PlayAgain();
         }
 
         /// <summary>
@@ -95,8 +91,7 @@ namespace LuckyTrash.Controllers
         /// </summary>
         private void OnRestartWithSelectionClicked()
         {
-            GameManager.Instance.ClearQuickRestart();
-            SceneManager.LoadScene(TitleSceneName);
+            ResultNavigation.ReselectPlayers();
         }
     }
 }

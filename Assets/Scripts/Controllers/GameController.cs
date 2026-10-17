@@ -93,6 +93,26 @@ namespace LuckyTrash.Controllers
         [Header("Score")]
         [Tooltip("得点のルール（順位の得点とボーナス）。Assets/Settings/ScoreRules.asset。")]
         [SerializeField] private ScoreRulesAsset _scoreRules;
+
+        [Header("Game End Finale")]
+        [Tooltip("順位が確定したあとの最後の演出と、取引明細書（GameScene の上で見せる）。")]
+        [SerializeField] private GameFinaleView _finaleView;
+        [Tooltip("ONの場合のみ、以前のように ResultScene へ切り替えて結果を見せる（取引明細書は使わない）。")]
+        [SerializeField] private bool _useResultScene = false;
+        [Tooltip("最下位の人の残りの手札を、1枚ずつ捨て札の山へ放り込む間隔（秒）。")]
+        [SerializeField] private float _finaleThrowStagger = 0.22f;
+        [Tooltip("「TRASH」のスタンプを押してから、1位を祝う演出に移るまでの間（秒）。")]
+        [SerializeField] private float _finalePauseAfterTrash = 0.35f;
+        [Tooltip("1位の金の紙幣の大きさ（あがりのときの紙幣に対する倍率）。")]
+        [SerializeField] private float _finaleChampionNoteScale = 1.3f;
+        [Tooltip("1位の金の紙幣が中央で止まっている時間（秒）。")]
+        [SerializeField] private float _finaleChampionHoldSeconds = 1.5f;
+        [Tooltip("1位を祝うときにはじける札束の枚数（あがりのときに対する倍率）。")]
+        [SerializeField] private float _finaleBurstCountScale = 2f;
+        [Tooltip("1位の人のネームプレートのメダルが光っている時間（秒）。")]
+        [SerializeField] private float _finaleMedalGlowSeconds = 2.0f;
+        [Tooltip("1位の金の紙幣に書く文字（{0} に名前が入る）。")]
+        [SerializeField] private string _finaleChampionMessage = "<size=70%>{0}</size>\n1位！";
         [Tooltip("ONの場合のみ、以前の黄色い「〇位あがり!」の表示（結果ポップアップ）を出す。通常は金の紙幣で発表する。")]
         [SerializeField] private bool _showFinishMessagePopup = false;
 
@@ -157,6 +177,12 @@ namespace LuckyTrash.Controllers
 
         /// <summary>直近の勝負の得点の明細（勝負が終わるまでは null）。</summary>
         public MatchSummary LastMatchSummary => _lastMatchSummary;
+
+        // ゲーム終了時の最後の演出（タップで飛ばしたときに止めるコルーチン、最下位の残りの手札）。
+        private readonly List<Coroutine> _finaleRoutines = new List<Coroutine>();
+        private Player _finaleLastPlace;
+        private List<Card> _finaleLastHand;
+        private bool _finaleStatementStarted;
 
         // 両アクション完了後に GameState.ResolveTurn() へ渡すための、確定済みの抽選結果。
         private RouletteCategory _pendingCategory;
@@ -520,6 +546,13 @@ namespace LuckyTrash.Controllers
                 // 順位の得点とボーナスを通算に加える（明細はフェーズ2の結果表示で使う）。
                 _lastMatchSummary = ScoreSession.Book.FinishMatch(_gameState.Rankings.Select(p => p.SeatIndex).ToList());
 
+                // 結果画面には切り替えず、テーブルの上で最後の演出と取引明細書を見せる。
+                if (_finaleView != null && !_useResultScene)
+                {
+                    StartFinale();
+                    yield break;
+                }
+
                 // 演出5: シーン遷移前にテーブル全体を見せるズームアウト（waitForCameraArrivalの
                 // 設定に関わらず、常に最後まで見せてから遷移する）。
                 if (_cameraDirector != null)
@@ -753,6 +786,182 @@ namespace LuckyTrash.Controllers
         /// あがったプレイヤーを、金の紙幣（中央で止まった瞬間に札束がはじけ、ネームプレートにメダルを押す）で
         /// 発表し、紙幣が抜けきって札束も消えるまで待つコルーチン。順位は Player.Rank を読み取るだけ。
         /// </summary>
+        // --------------------------------------------------------------
+        // ゲーム終了時の最後の演出：① 最下位をいじる → ② 1位を祝う → ③ カメラの上昇と取引明細書。
+        // ①②の途中で画面のどこかをタップしたら、途中の演出を片付けて③へ進む。
+        // --------------------------------------------------------------
+
+        private void StartFinale()
+        {
+            var rankings = _gameState.Rankings;
+            _finaleLastPlace = rankings[rankings.Count - 1];
+            _finaleLastHand = _finaleLastPlace.Hand.ToList();
+            _finaleStatementStarted = false;
+            _finaleRoutines.Clear();
+            _finaleView.ShowSkipCatcher(SkipFinale);
+            TrackFinale(FinaleIntro(_finaleLastPlace, rankings[0]));
+        }
+
+        private Coroutine TrackFinale(IEnumerator routine)
+        {
+            var coroutine = StartCoroutine(routine);
+            _finaleRoutines.Add(coroutine);
+            return coroutine;
+        }
+
+        private IEnumerator FinaleIntro(Player lastPlace, Player champion)
+        {
+            // ① 最下位の人の残りの手札を、いつものトラッシュの動きで1枚ずつ捨て札の山へ放り込む。
+            var handView = GetHandView(lastPlace.SeatIndex);
+            if (handView != null && _discardPile != null && _finaleLastHand.Count > 0)
+            {
+                _discardPile.Sync(_gameState.DiscardPile);
+                var views = handView.DetachCardViews(Enumerable.Range(0, handView.CardViews.Count).ToList());
+                if (views.Count == _finaleLastHand.Count)
+                {
+                    yield return TrackFinale(_discardPile.PlayDiscards(views, _finaleLastHand, !lastPlace.IsHuman,
+                        null, null, null, _finaleThrowStagger));
+                }
+                else
+                {
+                    foreach (var view in views)
+                    {
+                        Destroy(view.gameObject);
+                    }
+                }
+            }
+
+            // 最後に、最下位の人のネームプレートに「TRASH」のスタンプを押す。
+            yield return TrackFinale(_finaleView.StampTrash(_nameplateBar != null ? _nameplateBar.GetPlateRect(lastPlace.SeatIndex) : null));
+            yield return new WaitForSeconds(_finalePauseAfterTrash);
+
+            // ② 1位を祝う：大きな金の紙幣が中央で止まった瞬間に、スロットが一斉に光り、多めの札束がはじける。メダルも光る。
+            if (_nameplateBar != null)
+            {
+                TrackFinale(_finaleView.GlowMedal(_nameplateBar.GetMedalRect(champion.SeatIndex), _finaleMedalGlowSeconds));
+            }
+            if (_turnBanknote != null)
+            {
+                int order = _turnOrderBySeat.TryGetValue(champion.SeatIndex, out int o) ? o : 1;
+                string name = champion.IsHuman ? "あなた" : GetDisplayName(champion);
+                yield return TrackFinale(_turnBanknote.PlayFinish(order, name, 1, champion.IsHuman, note =>
+                {
+                    if (_casinoBackground != null)
+                    {
+                        _casinoBackground.PlayJackpot();
+                    }
+                    if (_moneyBurst != null)
+                    {
+                        _moneyBurst.Play(note.position, note.sizeDelta, champion.IsHuman, true, _finaleBurstCountScale);
+                    }
+                }, _finaleChampionNoteScale, _finaleChampionHoldSeconds, string.Format(_finaleChampionMessage, name)));
+            }
+            else if (_casinoBackground != null)
+            {
+                _casinoBackground.PlayJackpot();
+            }
+
+            _finaleView.HideSkipCatcher();
+            ShowFinaleStatement();
+        }
+
+        /// <summary>演出の途中でタップされたとき：途中の演出を残さず片付け、終わった後の状態にしてから③へ進む。</summary>
+        private void SkipFinale()
+        {
+            if (_finaleStatementStarted)
+            {
+                return;
+            }
+            foreach (var routine in _finaleRoutines)
+            {
+                if (routine != null)
+                {
+                    StopCoroutine(routine);
+                }
+            }
+            _finaleRoutines.Clear();
+
+            if (_discardPile != null)
+            {
+                _discardPile.CancelFlights();
+                _discardPile.Sync(_gameState.DiscardPile.Concat(_finaleLastHand).ToList());
+            }
+            GetHandView(_finaleLastPlace.SeatIndex)?.SetHand(Array.Empty<Card>(), faceDown: !_finaleLastPlace.IsHuman);
+            _turnBanknote?.Cancel();
+            _moneyBurst?.Clear();
+            _finaleView.ClearTransientEffects();
+            if (_nameplateBar != null)
+            {
+                _finaleView.StampTrashImmediate(_nameplateBar.GetPlateRect(_finaleLastPlace.SeatIndex));
+                var medal = _nameplateBar.GetMedalRect(_gameState.Rankings[0].SeatIndex);
+                if (medal != null)
+                {
+                    medal.localScale = Vector3.one;
+                }
+            }
+            ShowFinaleStatement();
+        }
+
+        private void ShowFinaleStatement()
+        {
+            if (_finaleStatementStarted)
+            {
+                return;
+            }
+            _finaleStatementStarted = true;
+            _finaleView.HideSkipCatcher();
+            StartCoroutine(FinaleStatementRoutine());
+        }
+
+        private IEnumerator FinaleStatementRoutine()
+        {
+            // ③ カメラがテーブル全体を見渡す位置まで上昇する（ゲーム終了時のカメラの上昇を流用）。
+            if (_cameraDirector != null)
+            {
+                _cameraDirector.StartCoroutine(_cameraDirector.ZoomOutForGameEnd());
+                yield return null;
+                float waited = 0f;
+                while (_cameraDirector.IsMoving && waited < 3f)
+                {
+                    waited += Time.deltaTime;
+                    yield return null;
+                }
+            }
+
+            _finaleView.ShowStatement(_lastMatchSummary.MatchNumber, BuildStatementRows(_lastMatchSummary),
+                _lastMatchSummary.LeaderChanged, ResultNavigation.PlayAgain, ResultNavigation.ReselectPlayers);
+        }
+
+        private static readonly string[] StatementSuits = { "\u2660", "\u2665", "\u2666", "\u2663" };
+
+        private List<StatementRow> BuildStatementRows(MatchSummary summary)
+        {
+            var rows = new List<StatementRow>(summary.Lines.Count);
+            foreach (var line in summary.Lines)
+            {
+                var player = _gameState.Players.First(p => p.SeatIndex == line.SeatIndex);
+                int order = _turnOrderBySeat.TryGetValue(line.SeatIndex, out int o) ? o : 1;
+                int suitIndex = (Mathf.Max(1, order) - 1) % StatementSuits.Length;
+                bool red = suitIndex == 1 || suitIndex == 2;
+                rows.Add(new StatementRow
+                {
+                    Rank = line.Rank,
+                    MedalColor = _nameplateBar != null ? _nameplateBar.MedalColor(line.Rank) : Color.white,
+                    Suit = StatementSuits[suitIndex],
+                    SuitColor = _nameplateBar != null ? (red ? _nameplateBar.SuitRedColor : _nameplateBar.SuitBlackColor) : Color.black,
+                    Name = GetDisplayName(player),
+                    IsHuman = player.IsHuman,
+                    RankPoints = line.RankPoints,
+                    Bonuses = line.Bonuses,
+                    Deposit = line.Deposit,
+                    PreviousBalance = line.PreviousBalance,
+                    Balance = line.Balance,
+                    IsLeader = summary.LeaderSeats.Contains(line.SeatIndex)
+                });
+            }
+            return rows;
+        }
+
         private IEnumerator PlayFinishCelebration(Player finished)
         {
             int rank = finished.Rank ?? 0;

@@ -149,6 +149,32 @@ namespace LuckyTrash.UI
             }
         }
 
+        /// <summary>座席のプレートの RectTransform（見つからなければ null）。ゲーム終了時の演出でスタンプを重ねるのに使う。</summary>
+        public RectTransform GetPlateRect(int seatIndex)
+        {
+            foreach (var plate in _plates)
+            {
+                if (plate.SeatIndex == seatIndex)
+                {
+                    return (RectTransform)plate.transform;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>座席のプレートに押されている順位のメダル（まだ押されていなければ null）。</summary>
+        public RectTransform GetMedalRect(int seatIndex)
+        {
+            foreach (var plate in _plates)
+            {
+                if (plate.SeatIndex == seatIndex)
+                {
+                    return plate.MedalRect;
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// 手番の順に並べたプレイヤー情報からプレートを作り直す（試合開始時に1回呼ぶ）。
         /// </summary>

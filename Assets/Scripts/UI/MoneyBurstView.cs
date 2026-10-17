@@ -85,11 +85,17 @@ namespace LuckyTrash.UI
         /// 小さな紙幣を外向きにはじけさせる（中心から出すと手前の紙幣に隠れてしまうため）。
         /// 戻り値は全部消えるまでの時間（秒）。
         /// </summary>
-        public float Play(Vector3 worldCenter, Vector2 emitSize, bool isHuman, bool firstPlace)
+        /// <param name="countScale">はじける枚数の倍率（ゲーム終了時の1位の発表で多めにするとき用。既定は 1）。</param>
+        public float Play(Vector3 worldCenter, Vector2 emitSize, bool isHuman, bool firstPlace, float countScale = 1f)
         {
             var root = (RectTransform)transform;
             Vector2 center = root.InverseTransformPoint(worldCenter);
-            int count = (isHuman ? _humanCount : _cpuCount) + (firstPlace ? _firstPlaceBonus : 0);
+            int count = Mathf.RoundToInt(((isHuman ? _humanCount : _cpuCount) + (firstPlace ? _firstPlaceBonus : 0)) * Mathf.Max(0f, countScale));
+            // 用意した数より多く出すときは、足りない分を作り足す（次からも使い回す）。
+            while (_bills.Count < count)
+            {
+                _bills.Add(CreateBill(_bills.Count));
+            }
             float spread = isHuman ? _humanSpreadScale : 1f;
             float longest = 0f;
 
@@ -126,6 +132,17 @@ namespace LuckyTrash.UI
 
             _remaining = Mathf.Max(_remaining, longest);
             return longest;
+        }
+
+        /// <summary>舞っている紙幣をすべてすぐに消す（演出を飛ばしたとき用）。</summary>
+        public void Clear()
+        {
+            foreach (var bill in _bills)
+            {
+                bill.Active = false;
+                bill.Rect.gameObject.SetActive(false);
+            }
+            _remaining = 0f;
         }
 
         private void Update()
