@@ -31,6 +31,9 @@ namespace LuckyTrash.UI
         private NameplateBarView _bar;
         private HashSet<NameplateSeatDirection> _occupiedSeats;
         private Image _dimOverlay;
+        private Image _finishedOverlay;
+        private RectTransform _medal;
+        private float _medalElapsed = -1f;
         private TMP_Text _handCountText;
         private GameObject _rankBadge;
         private TMP_Text _rankText;
@@ -72,6 +75,10 @@ namespace LuckyTrash.UI
             Stretch(_dimOverlay.rectTransform, 0f, 0f, 0f, 0f);
             _dimOverlay.gameObject.SetActive(false);
 
+            _finishedOverlay = CreateImage("FinishedOverlay", transform, _bar.RoundedSprite, _bar.FinishedOverlayColor);
+            Stretch(_finishedOverlay.rectTransform, 0f, 0f, 0f, 0f);
+            _finishedOverlay.gameObject.SetActive(false);
+
             BuildRankBadge();
             ApplyEmphasis();
         }
@@ -104,8 +111,70 @@ namespace LuckyTrash.UI
             _dimOverlay.gameObject.SetActive(showRank);
         }
 
+        /// <summary>
+        /// 順位のメダルを押し、プレートを暗くする（メダル自体は暗くしない）。animate なら、大きく出てから
+        /// 元の大きさに収まるスタンプの動きにする。
+        /// </summary>
+        public void StampMedal(int rank, bool animate)
+        {
+            _finishedOverlay.gameObject.SetActive(true);
+            if (_medal != null)
+            {
+                Destroy(_medal.gameObject);
+            }
+            _medal = BuildMedal(rank);
+            _medalElapsed = animate ? 0f : -1f;
+            _medal.localScale = Vector3.one * (animate ? _bar.MedalStampStartScale : 1f);
+        }
+
+        private RectTransform BuildMedal(int rank)
+        {
+            float size = _bar.MedalSize;
+            Color color = _bar.MedalColor(rank);
+
+            var root = new GameObject("FinishMedal", typeof(RectTransform)).GetComponent<RectTransform>();
+            root.SetParent(transform, false);
+            root.anchorMin = root.anchorMax = new Vector2(1f, 1f);
+            root.pivot = new Vector2(0.5f, 0.5f);
+            root.sizeDelta = Vector2.one * size;
+            root.anchoredPosition = new Vector2(-size * 0.45f, -size * 0.3f);
+            root.localRotation = Quaternion.Euler(0f, 0f, -12f);
+
+            var shadow = CreateImage("Shadow", root, _bar.CircleSprite, new Color(0f, 0f, 0f, 0.3f));
+            Stretch(shadow.rectTransform, 0f, 0f, 0f, 0f);
+            shadow.rectTransform.anchoredPosition = new Vector2(2f, -2f);
+
+            var disc = CreateImage("Disc", root, _bar.CircleSprite, color);
+            Stretch(disc.rectTransform, 0f, 0f, 0f, 0f);
+            var discEdge = disc.gameObject.AddComponent<Outline>();
+            discEdge.effectColor = Color.Lerp(color, Color.black, 0.45f);
+            discEdge.effectDistance = new Vector2(1.5f, -1.5f);
+
+            var ring = CreateImage("Ring", root, _bar.CircleSprite, Color.Lerp(color, Color.white, 0.45f));
+            Stretch(ring.rectTransform, size * 0.14f, size * 0.14f, size * 0.14f, size * 0.14f);
+            var inner = CreateImage("Inner", root, _bar.CircleSprite, color);
+            Stretch(inner.rectTransform, size * 0.19f, size * 0.19f, size * 0.19f, size * 0.19f);
+
+            var number = CreateText("Rank", root, _bar.SymbolFont, rank.ToString(), size * 0.5f,
+                Color.Lerp(color, Color.black, 0.65f), TextAlignmentOptions.Center);
+            number.fontStyle = FontStyles.Bold;
+            Stretch(number.rectTransform, 0f, 0f, 0f, 0f);
+            return root;
+        }
+
         private void Update()
         {
+            if (_medal != null && _medalElapsed >= 0f)
+            {
+                _medalElapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(_medalElapsed / Mathf.Max(0.01f, _bar.MedalStampSeconds));
+                _medal.localScale = Vector3.one * Mathf.Lerp(_bar.MedalStampStartScale, 1f, 1f - (1f - t) * (1f - t));
+                if (t >= 1f)
+                {
+                    _medalElapsed = -1f;
+                }
+            }
+
             if (Mathf.Approximately(_emphasis, _emphasisTarget))
             {
                 return;

@@ -122,6 +122,11 @@ namespace LuckyTrash.UI
         [SerializeField] private float _pointerHeight = 0.07f;
         [Tooltip("ポインター先端が円盤の上にどれだけかかるか（ワールド単位、円盤中心方向へのオフセット）。")]
         [SerializeField] private float _pointerOverlapWithDisc = 0.08f;
+        [Tooltip("ポインターの底面を、外枠の上面からどれだけ浮かせるか。上面や金のラインと同じ高さの面ができてちらつく（Zファイティング）のを防ぐ。金のラインがあるときは、その上になるよう自動で底上げする。")]
+        [SerializeField] private float _pointerLiftAboveRim = 0.002f;
+
+        // 金のアクセントラインを、外枠の上面からどれだけ浮かせて重ねるか。
+        private const float RimAccentLift = 0.001f;
 
         private const string GeneratedRootName = "GeneratedDecorations";
         private Transform _generatedRoot;
@@ -679,7 +684,7 @@ namespace LuckyTrash.UI
             float innerR = rimInnerR;
             float outerR = rimInnerR + _rimAccentWidth;
             // Zファイティングを避けるため、リム上面よりわずかに高い位置に重ねる。
-            float h = rimHeight + 0.001f;
+            float h = rimHeight + RimAccentLift;
 
             var verts = new List<Vector3>();
             var tris = new List<int>();
@@ -979,6 +984,15 @@ namespace LuckyTrash.UI
             // 背面（底辺側）
             AddQuad(verts, tris, baseRight, baseRightTop, baseLeftTop, baseLeft);
 
+            // 上の頂点の並びはどの面も裏返し（表が内側を向く）になっていて、上から見ると上面が消え、
+            // 外枠の上面と同じ高さの底面が内側から見えてちらついていた。三角形の向きをそろえて表を外側に向ける。
+            for (int i = 0; i < tris.Count; i += 3)
+            {
+                int swap = tris[i + 1];
+                tris[i + 1] = tris[i + 2];
+                tris[i + 2] = swap;
+            }
+
             mesh.SetVertices(verts);
             mesh.SetTriangles(tris, 0);
             mesh.RecalculateNormals();
@@ -997,7 +1011,9 @@ namespace LuckyTrash.UI
             // 先端が円盤(半径0.6)の縁から _pointerOverlapWithDisc だけ内側に入るよう根元位置を調整する。
             float tipWorldZ = DiscRadius - _pointerOverlapWithDisc; // 先端のroot基準ローカルZ
             float baseWorldZ = tipWorldZ + len; // 根元(外枠の外側)のroot基準ローカルZ
-            _pointer.localPosition = new Vector3(0f, _tableContactOffset + _pedestalHeight + _rimHeight, baseWorldZ);
+            // 底面は外枠の上面（金のラインがあればその上）よりわずかに上に乗せ、同じ高さの面を作らない。
+            float lift = _rimAccentEnabled ? Mathf.Max(_pointerLiftAboveRim, RimAccentLift + 0.0005f) : Mathf.Max(_pointerLiftAboveRim, 0.0005f);
+            _pointer.localPosition = new Vector3(0f, _tableContactOffset + _pedestalHeight + _rimHeight + lift, baseWorldZ);
             _pointer.localRotation = Quaternion.Euler(0f, 180f, 0f); // ローカル+Zが円盤中心(root原点)を向くように反転
             _pointer.localScale = Vector3.one;
         }

@@ -77,6 +77,8 @@ namespace LuckyTrash.UI
         [SerializeField] private float _turnPanDurationSeconds = 0.6f;
 
         [Header("演出4: あがり演出（ズームイン）")]
+        [Tooltip("ONであがった座席へズームインする。OFFの間は何もせず、カメラは定位置のまま（あがりは金の紙幣の演出で見せる）。")]
+        [SerializeField] private bool _enableFinishZoom = false;
         [SerializeField] private float _finishZoomHeight = 0.9f;
         [SerializeField] private float _finishZoomForwardOffset = 0.6f;
         [SerializeField] private float _finishZoomFov = 38f;
@@ -101,6 +103,9 @@ namespace LuckyTrash.UI
         private Quaternion _defaultRotation;
         private float _defaultFov;
         private Coroutine _activeMove;
+
+        /// <summary>カメラが移動中か（ドロー後の定位置への戻りなど、どの演出の移動でも）。</summary>
+        public bool IsMoving => _activeMove != null;
 
         private void Awake()
         {
@@ -192,6 +197,11 @@ namespace LuckyTrash.UI
 
         public IEnumerator FocusFinish(SeatSide side)
         {
+            if (!_enableFinishZoom)
+            {
+                yield break;
+            }
+
             Transform anchor = GetSeatAnchor(side);
             if (anchor == null)
             {

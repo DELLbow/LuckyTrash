@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using LuckyTrash.Cards;
 using TMPro;
@@ -32,8 +33,34 @@ namespace LuckyTrash.UI
         [SerializeField] private float _cardScale = 5f;
 
         private readonly List<Card3DView> _cardViews = new List<Card3DView>();
+        private Coroutine _relayout;
 
         private Transform CardContainer => _cardContainer3D != null ? _cardContainer3D : transform;
+
+        /// <summary>いま並んでいるカード（左から順、直前の SetHand に渡した手札と同じ順）。</summary>
+        public IReadOnlyList<Card3DView> CardViews => _cardViews;
+
+        /// <summary>
+        /// 指定した位置（0始まり）のカードを、この手札の管理から外して返す（左から順）。外したカードは破棄せず、
+        /// 呼び出し側が演出（捨て札の山へ飛ばすなど）に使う。この後の SetHand は、残ったカードだけを並べ直す。
+        /// </summary>
+        public List<Card3DView> DetachCardViews(IReadOnlyList<int> indices)
+        {
+            var detached = new List<Card3DView>();
+            var sorted = new List<int>(indices);
+            sorted.Sort();
+            for (int i = sorted.Count - 1; i >= 0; i--)
+            {
+                int index = sorted[i];
+                if (index < 0 || index >= _cardViews.Count)
+                {
+                    continue;
+                }
+                detached.Insert(0, _cardViews[index]);
+                _cardViews.RemoveAt(index);
+            }
+            return detached;
+        }
 
         /// <summary>
         /// 手札の内容に応じて表示を更新する。呼び出すたびに、現在渡された手札の枚数・内容に
@@ -44,7 +71,11 @@ namespace LuckyTrash.UI
         /// true の場合、枚数はそのまま表示しつつ全カードを裏向き（<see cref="Card3DView.SetFaceDown"/>）
         /// にする。CPUの手札を表示する際に使う。既定は false（表向き）。
         /// </param>
-        public void SetHand(IReadOnlyList<Card> hand, bool faceDown = false)
+        /// <param name="relayoutSeconds">
+        /// 0より大きい場合、もともと並んでいたカードは新しい位置まで、この秒数をかけて滑らかに詰める
+        /// （カードを捨てた後の並び直しに使う）。既定は 0（すぐに並べる）。
+        /// </param>
+        public void SetHand(IReadOnlyList<Card> hand, bool faceDown = false, float relayoutSeconds = 0f)
         {
             if (hand == null)
             {
@@ -56,6 +87,14 @@ namespace LuckyTrash.UI
                 Debug.LogError($"{nameof(HandView)}: {nameof(_cardViewPrefab)} が設定されていません。", this);
                 return;
             }
+
+            if (_relayout != null)
+            {
+                StopCoroutine(_relayout);
+                _relayout = null;
+            }
+
+            int previousCount = _cardViews.Count;
 
             // 枚数が変わっても正しく表示できるよう、必要な数だけ Card3DView を過不足なく用意する。
             while (_cardViews.Count < hand.Count)
@@ -75,8 +114,10 @@ namespace LuckyTrash.UI
                 }
             }
 
+            var starts = new List<Vector3>();
             for (int i = 0; i < hand.Count; i++)
             {
+                starts.Add(_cardViews[i].transform.localPosition);
                 if (faceDown)
                 {
                     _cardViews[i].SetFaceDown();
@@ -89,6 +130,28 @@ namespace LuckyTrash.UI
                 _cardViews[i].transform.localPosition = GetSlotLocalPosition(i, hand.Count);
                 _cardViews[i].transform.localScale = Vector3.one * _cardScale;
             }
+
+            if (relayoutSeconds > 0f && isActiveAndEnabled)
+            {
+                _relayout = StartCoroutine(RelayoutRoutine(starts, Mathf.Min(previousCount, hand.Count), relayoutSeconds));
+            }
+        }
+
+        private IEnumerator RelayoutRoutine(List<Vector3> starts, int animatedCount, float seconds)
+        {
+            int count = _cardViews.Count;
+            float elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / seconds));
+                for (int i = 0; i < animatedCount && i < _cardViews.Count; i++)
+                {
+                    _cardViews[i].transform.localPosition = Vector3.Lerp(starts[i], GetSlotLocalPosition(i, count), t);
+                }
+                yield return null;
+            }
+            _relayout = null;
         }
 
         /// <summary>

@@ -91,6 +91,17 @@ namespace LuckyTrash.UI
             _initialized = true;
         }
 
+        /// <summary>基準カードの見た目（メッシュの Renderer）。捨て札の山へ移す演出で、位置・向き・マテリアルを写すのに使う。</summary>
+        public MeshRenderer CardRenderer => _cardMeshRenderer;
+
+        /// <summary>
+        /// 基準カードが捨て札の山へ移ったときに、スロットのカードを隠す（次のターンの ClearAndReset で定位置に戻る）。
+        /// </summary>
+        public void HideCard()
+        {
+            gameObject.SetActive(false);
+        }
+
         /// <summary>
         /// ターン開始時など、基準カードスロットを定位置・空のプレースホルダー状態に戻す。
         /// そのターンでまだカードが引かれていないことを表すため、非表示にする

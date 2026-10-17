@@ -83,6 +83,26 @@ namespace LuckyTrash.Controllers
         [Tooltip("手番の人の手札の下のフェルトを照らす演出（任意）。")]
         [SerializeField] private TurnSpotlightView _turnSpotlight;
 
+        [Header("Finish Celebration")]
+        [Tooltip("あがりの金の紙幣が中央で止まった瞬間に、小さな紙幣をはじけさせる演出。")]
+        [SerializeField] private MoneyBurstView _moneyBurst;
+        [Tooltip("ONの場合のみ、以前の黄色い「〇位あがり!」の表示（結果ポップアップ）を出す。通常は金の紙幣で発表する。")]
+        [SerializeField] private bool _showFinishMessagePopup = false;
+
+        [Header("Turn Result")]
+        [Tooltip("盤面の捨て札の山。捨てられたカードと基準カードがここへ飛んでいく。")]
+        [SerializeField] private DiscardPileView _discardPile;
+        [Tooltip("ターンの結果を、画面中央に銀行のスタンプを押したように見せる演出。")]
+        [SerializeField] private BankStampView _bankStamp;
+        [Tooltip("ONの場合のみ、以前の黄色い「N枚トラッシュ!」の結果ポップアップで結果を見せる。")]
+        [SerializeField] private bool _useLegacyResultPopup = false;
+        [Tooltip("カードを捨てた後、残った手札が詰めて並び直す時間（秒）。")]
+        [SerializeField] private float _handRelayoutSeconds = 0.2f;
+        [Tooltip("ONの場合、カードを引いた後のカメラが定位置へ戻りきってから、手札が光り始める（スタンプも同時に押す）。")]
+        [SerializeField] private bool _waitForCameraBeforeResult = true;
+        [Tooltip("カメラの戻りを待つ時間の上限（秒）。何かの理由でカメラが止まらない場合でも、ここで打ち切って進める。")]
+        [SerializeField] private float _cameraWaitTimeoutSeconds = 2f;
+
         [Header("Nameplates")]
         [Tooltip("画面左上に、参加プレイヤーのネームプレートを手番の順（1P, 2P, ...）に並べる表示。")]
         [SerializeField] private NameplateBarView _nameplateBar;
@@ -240,6 +260,7 @@ namespace LuckyTrash.Controllers
             }
 
             BuildNameplates(startingSeatIndex);
+            _discardPile?.Sync(_gameState.DiscardPile);
 
             SetStatusText($"ゲーム開始（{playerCount}人）。{GetDisplayName(_gameState.CurrentPlayer)} から開始します{startReason}。");
 
@@ -365,6 +386,11 @@ namespace LuckyTrash.Controllers
             {
                 _deckCounter.PlayReshuffle(_gameState.FlipDeckCount);
             }
+            // 同じタイミングで、盤面の捨て札の山が山札の方へ移って空になる。
+            if (reconstituted && _discardPile != null)
+            {
+                _discardPile.PlayReshuffle();
+            }
             UpdateDeckCountLabel();
 
             // 演出6: めくり札用デッキが尽きて再構築された場合、演出2のフォーカスをさらに山札へ
@@ -396,13 +422,19 @@ namespace LuckyTrash.Controllers
         /// </summary>
         private IEnumerator ResolveTurnRoutine()
         {
+            // どの位置のカードが捨てられたかを後で突き合わせるため、判定前の手札を控えておく（読み取りのみ）。
+            var handBefore = _gameState.CurrentPlayer.Hand.ToList();
             var result = _gameState.ResolveTurn(_pendingCategory, _pendingDrawnCard, _pendingFlipDeckWasReconstituted);
+            bool useNewResult = !_useLegacyResultPopup && _discardPile != null && _bankStamp != null;
 
-            // 手札が変化するのは手番プレイヤーの座席のみなので、そこだけ更新すればよい。
-            GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand, faceDown: !result.TurnPlayer.IsHuman);
+            if (!useNewResult)
+            {
+                // 手札が変化するのは手番プレイヤーの座席のみなので、そこだけ更新すればよい。
+                GetHandView(result.TurnPlayer.SeatIndex)?.SetHand(result.TurnPlayer.Hand, faceDown: !result.TurnPlayer.IsHuman);
 
-            // 残り枚数・順位（最後の1人に自動で付く最下位も含む）をネームプレートに反映する。
-            RefreshNameplateStates();
+                // 残り枚数・順位（最後の1人に自動で付く最下位も含む）をネームプレートに反映する。
+                RefreshNameplateStates();
+            }
             if (result.GameEnded && _nameplateBar != null)
             {
                 _nameplateBar.SetCurrentPlayer(-1);
@@ -425,15 +457,25 @@ namespace LuckyTrash.Controllers
                 yield return StartCoroutine(_cameraDirector.FocusFinish(GetSeatSide(result.FinishedPlayer.SeatIndex)));
             }
 
-            if (_resultPopupView != null)
+            if (useNewResult)
+            {
+                yield return StartCoroutine(PlayTurnResult(result, handBefore));
+            }
+            else if (_resultPopupView != null)
             {
                 yield return StartCoroutine(_resultPopupView.ShowResult(result.DiscardedCards.Count));
             }
 
             // あがったターンは必ず1枚以上捨てているため、上のトラッシュ枚数ポップアップと
-            // 「あがり!」ポップアップが連続して発生する。2つが重ならないよう、トラッシュ表示の
-            // 退場が完全に終わってから（上のyieldが完了してから）あがり表示を始める。
-            if (playerFinished && _resultPopupView != null)
+            // あがりの演出が連続して発生する。2つが重ならないよう、トラッシュ表示の
+            // 退場が完全に終わってから（上のyieldが完了してから）あがりの演出を始める。
+            // あがりの演出（金の紙幣＋札束＋メダル）は終わるまで待ってから、次の手番・結果画面へ進む。
+            if (playerFinished)
+            {
+                yield return StartCoroutine(PlayFinishCelebration(result.FinishedPlayer));
+            }
+
+            if (playerFinished && _showFinishMessagePopup && _resultPopupView != null)
             {
                 string rankText = result.FinishedPlayer.Rank.HasValue
                     ? $"{result.FinishedPlayer.Rank}位あがり!"
@@ -461,6 +503,70 @@ namespace LuckyTrash.Controllers
             }
 
             StartNextTurn();
+        }
+
+        /// <summary>
+        /// ターンの結果を見せるコルーチン。画面中央にスタンプを押すのと同時に、盤面では
+        /// トラッシュなら捨てるカードが金色に光って浮き（CPUのカードは表にめくれ）、基準カードと一緒に捨て札の山へ飛ぶ。
+        /// ノートラッシュなら手札がぶるっと震え、基準カードだけが捨て札の山へ飛ぶ。両方が終わるまで待つ。
+        /// </summary>
+        private IEnumerator PlayTurnResult(TurnResult result, IReadOnlyList<Card> handBefore)
+        {
+            var player = result.TurnPlayer;
+            var handView = GetHandView(player.SeatIndex);
+            int discardedCount = result.DiscardedCards.Count;
+
+            // カードを引いた後のカメラが定位置へ戻りきってから始める（光る手札が画面の外にならないように）。
+            if (_waitForCameraBeforeResult && _cameraDirector != null)
+            {
+                float waited = 0f;
+                while (_cameraDirector.IsMoving && waited < _cameraWaitTimeoutSeconds)
+                {
+                    waited += Time.deltaTime;
+                    yield return null;
+                }
+            }
+
+            // 山の見た目は、まだ飛んでいない基準カードと捨て札を除いた分に合わせておく（着地ごとに1枚ずつ積む）。
+            _discardPile.Sync(_gameState.DiscardPile, excludeTop: 1 + discardedCount);
+
+            var stamp = StartCoroutine(_bankStamp.Play(discardedCount, player.IsHuman));
+
+            var indices = DiscardTargets.GetIndices(handBefore, result.DiscardedCards);
+            var flyingViews = handView != null ? handView.DetachCardViews(indices) : new List<Card3DView>();
+            var flyingCards = indices.Select(i => handBefore[i]).ToList();
+            if (flyingViews.Count != flyingCards.Count)
+            {
+                // 表示と手札がずれていた場合は、飛ばす演出をあきらめて結果だけ反映する。
+                foreach (var view in flyingViews)
+                {
+                    Destroy(view.gameObject);
+                }
+                flyingViews.Clear();
+                flyingCards.Clear();
+            }
+
+            Coroutine shake = null;
+            if (discardedCount == 0 && handView != null)
+            {
+                shake = StartCoroutine(_discardPile.Shake(handView.CardViews));
+            }
+
+            yield return StartCoroutine(_discardPile.PlayDiscards(flyingViews, flyingCards, revealFaces: !player.IsHuman,
+                _referenceCardDrawView, result.DrawnCard, () =>
+                {
+                    // 全部が飛び立ったら、残った手札を詰めて並べ直し、残り枚数をネームプレートに反映する。
+                    handView?.SetHand(player.Hand, faceDown: !player.IsHuman, relayoutSeconds: _handRelayoutSeconds);
+                    RefreshNameplateStates();
+                }));
+
+            if (shake != null)
+            {
+                yield return shake;
+            }
+            yield return stamp;
+
+            _discardPile.Sync(_gameState.DiscardPile);
         }
 
         /// <summary>
@@ -607,6 +713,41 @@ namespace LuckyTrash.Controllers
         private static string GetDisplayName(Player player)
         {
             return !string.IsNullOrEmpty(player.DisplayName) ? player.DisplayName : $"Player {player.SeatIndex}";
+        }
+
+        /// <summary>
+        /// あがったプレイヤーを、金の紙幣（中央で止まった瞬間に札束がはじけ、ネームプレートにメダルを押す）で
+        /// 発表し、紙幣が抜けきって札束も消えるまで待つコルーチン。順位は Player.Rank を読み取るだけ。
+        /// </summary>
+        private IEnumerator PlayFinishCelebration(Player finished)
+        {
+            int rank = finished.Rank ?? 0;
+            int order = _turnOrderBySeat.TryGetValue(finished.SeatIndex, out int o) ? o : 1;
+            string name = finished.IsHuman ? "あなた" : GetDisplayName(finished);
+
+            if (_turnBanknote == null)
+            {
+                _nameplateBar?.StampFinishMedal(finished.SeatIndex, rank);
+                yield break;
+            }
+
+            yield return StartCoroutine(_turnBanknote.PlayFinish(order, name, rank, finished.IsHuman, note =>
+            {
+                if (_moneyBurst != null)
+                {
+                    _moneyBurst.Play(note.position, note.sizeDelta, finished.IsHuman, rank == 1);
+                }
+                if (_nameplateBar != null && rank > 0)
+                {
+                    _nameplateBar.StampFinishMedal(finished.SeatIndex, rank);
+                }
+            }));
+
+            // 札束がまだ舞っていれば、消えきるまで待つ（次の手番の紙幣と同時に出さないため）。
+            while (_moneyBurst != null && _moneyBurst.RemainingSeconds > 0f)
+            {
+                yield return null;
+            }
         }
 
         /// <summary>

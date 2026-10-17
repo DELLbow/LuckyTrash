@@ -70,6 +70,19 @@ namespace LuckyTrash.UI
         [Tooltip("♠♣の黒。プレート左上のスート記号と、ミニテーブル図の自分の席の塗りつぶしに使う。")]
         [SerializeField] private Color _suitBlackColor = new Color(0.10f, 0.10f, 0.12f);
 
+        [Header("あがりのメダル")]
+        [Tooltip("あがったプレイヤーのプレートに押す、順位のメダルの直径。")]
+        [SerializeField] private float _medalSize = 42f;
+        [SerializeField] private Color _goldMedalColor = new Color(0.95f, 0.76f, 0.20f);
+        [SerializeField] private Color _silverMedalColor = new Color(0.78f, 0.80f, 0.84f);
+        [SerializeField] private Color _bronzeMedalColor = new Color(0.78f, 0.50f, 0.26f);
+        [Tooltip("スタンプを押す動き（大きく出てから元の大きさに収まる）の時間（秒）。")]
+        [SerializeField] private float _medalStampSeconds = 0.3f;
+        [Tooltip("スタンプを押した瞬間の拡大率。")]
+        [SerializeField] private float _medalStampStartScale = 1.7f;
+        [Tooltip("あがったプレイヤーのプレートに重ねて、暗く・彩度を落として見せる色（灰色の半透明）。メダルは暗くしない。")]
+        [SerializeField] private Color _finishedOverlayColor = new Color(0.30f, 0.30f, 0.32f, 0.55f);
+
         [Header("素材")]
         [Tooltip("角丸の板（9スライス）。Assets/Textures/RoundedPanel.png。")]
         [SerializeField] private Sprite _roundedSprite;
@@ -84,6 +97,8 @@ namespace LuckyTrash.UI
         private readonly List<NameplateView> _plates = new List<NameplateView>();
         private List<NameplateInfo> _infos;
         private readonly Dictionary<int, (int HandCount, int? Rank)> _states = new Dictionary<int, (int, int?)>();
+        // あがってメダルを押したプレイヤー（SeatIndex → 順位）。作り直してもメダルを残すために覚えておく。
+        private readonly Dictionary<int, int> _medals = new Dictionary<int, int>();
         private int _currentSeatIndex = -1;
         private bool _rebuildRequested;
 
@@ -107,12 +122,39 @@ namespace LuckyTrash.UI
         public float UnusedSeatAlpha => _unusedSeatAlpha;
         public Color SuitRedColor => _suitRedColor;
         public Color SuitBlackColor => _suitBlackColor;
+        public float MedalSize => _medalSize;
+        public float MedalStampSeconds => _medalStampSeconds;
+        public float MedalStampStartScale => _medalStampStartScale;
+        public Color FinishedOverlayColor => _finishedOverlayColor;
+
+        /// <summary>順位に応じたメダルの色（1位＝金、2位＝銀、3位以降＝銅）。</summary>
+        public Color MedalColor(int rank)
+        {
+            return rank == 1 ? _goldMedalColor : rank == 2 ? _silverMedalColor : _bronzeMedalColor;
+        }
+
+        /// <summary>
+        /// あがったプレイヤーのプレートに、順位のメダルをスタンプのように押し、プレートを暗くする。
+        /// メダルはゲーム終了まで残す。
+        /// </summary>
+        public void StampFinishMedal(int seatIndex, int rank)
+        {
+            _medals[seatIndex] = rank;
+            foreach (var plate in _plates)
+            {
+                if (plate.SeatIndex == seatIndex)
+                {
+                    plate.StampMedal(rank, animate: true);
+                }
+            }
+        }
 
         /// <summary>
         /// 手番の順に並べたプレイヤー情報からプレートを作り直す（試合開始時に1回呼ぶ）。
         /// </summary>
         public void Build(IReadOnlyList<NameplateInfo> infosInTurnOrder)
         {
+            _medals.Clear();
             _infos = new List<NameplateInfo>(infosInTurnOrder);
             Rebuild();
         }
@@ -210,6 +252,10 @@ namespace LuckyTrash.UI
                     plate.SetState(state.HandCount, state.Rank);
                 }
                 plate.SetHighlighted(_infos[i].SeatIndex == _currentSeatIndex, immediate: true);
+                if (_medals.TryGetValue(_infos[i].SeatIndex, out int medalRank))
+                {
+                    plate.StampMedal(medalRank, animate: false);
+                }
                 _plates.Add(plate);
             }
         }

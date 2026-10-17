@@ -55,6 +55,15 @@ namespace LuckyTrash.UI
             transform.localRotation = Quaternion.Euler(FaceUpEuler);
         }
 
+        /// <summary>
+        /// 回転は変えずに、表面のマテリアルだけをそのカードのものにする。裏向きのカードを表向きにめくる演出の前に呼ぶ
+        /// （両面シェーダーなので、回転に応じて裏→表が自然に切り替わる。先に設定しないと白紙の面が見えてしまう）。
+        /// </summary>
+        public void ShowFaceMaterial(Card card)
+        {
+            ApplyMaterial(GetFaceMaterial(card.Suit, card.Rank));
+        }
+
         /// <summary>裏向き（中身が分からない状態）にする。CPUの手札表示に使う。</summary>
         public void SetFaceDown()
         {

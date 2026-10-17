@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -60,6 +61,35 @@ namespace LuckyTrash.UI
         [SerializeField] private Color _suitRedColor = new Color(0.80f, 0.10f, 0.12f);
         [SerializeField] private Color _suitBlackColor = new Color(0.10f, 0.10f, 0.12f);
 
+        [Header("あがりの金の紙幣")]
+        [Tooltip("自分があがったときの紙幣の大きさ（手番の紙幣より大きく）。")]
+        [SerializeField] private Vector2 _finishHumanSize = new Vector2(680f, 280f);
+        [Tooltip("CPUがあがったときの紙幣の大きさ（手番の自分の紙幣と同じくらい）。")]
+        [SerializeField] private Vector2 _finishCpuSize = new Vector2(560f, 230f);
+        [Tooltip("自分があがったときに、中央で止まっている時間（秒）。")]
+        [SerializeField] private float _finishHumanHoldSeconds = 1.5f;
+        [Tooltip("CPUがあがったときに、中央で止まっている時間（秒）。")]
+        [SerializeField] private float _finishCpuHoldSeconds = 1.0f;
+        [Tooltip("あがりの紙幣の紙の色（淡い金色）。")]
+        [SerializeField] private Color _finishPaperColor = new Color(0.98f, 0.90f, 0.62f);
+        [Tooltip("あがりの紙幣の縁取り・模様の色（濃い金色）。")]
+        [SerializeField] private Color _finishFrameColor = new Color(0.62f, 0.44f, 0.06f);
+        [Tooltip("あがりの紙幣の文字の色。")]
+        [SerializeField] private Color _finishInkColor = new Color(0.36f, 0.22f, 0.02f);
+
+        /// <summary>紙幣1枚分の見た目（手番の紙幣とあがりの金の紙幣で共通の組み立てに渡す）。</summary>
+        private struct NoteStyle
+        {
+            public Vector2 Size;
+            public Color Paper;
+            public Color Frame;
+            public Color Ink;
+            public bool BoldFrame;
+            public string CornerLabel;
+            public int SuitIndex;
+            public string Message;
+        }
+
         private RectTransform _note;
         private Coroutine _playing;
 
@@ -80,11 +110,61 @@ namespace LuckyTrash.UI
                 Destroy(_note.gameObject);
             }
 
-            _note = BuildNote(orderNumber, message, isHuman);
-            _playing = StartCoroutine(Animate(_note, isHuman ? _humanHoldSeconds : _cpuHoldSeconds));
+            _note = BuildNote(new NoteStyle
+            {
+                Size = isHuman ? _humanSize : _cpuSize,
+                Paper = _paperColor,
+                Frame = isHuman ? _goldColor : _inkColor,
+                Ink = _inkColor,
+                BoldFrame = isHuman,
+                CornerLabel = $"{orderNumber}P",
+                SuitIndex = SuitIndexOf(orderNumber),
+                Message = message
+            });
+            _playing = StartCoroutine(Animate(_note, isHuman ? _humanHoldSeconds : _cpuHoldSeconds, null));
         }
 
-        private IEnumerator Animate(RectTransform note, float holdSeconds)
+        /// <summary>
+        /// あがりを発表する金の紙幣を流し、左へ抜けきるまで待つコルーチン。
+        /// 中央で止まった瞬間に onCenter を呼ぶ（札束がはじける・メダルを押すタイミング）。
+        /// </summary>
+        /// <param name="orderNumber">あがったプレイヤーの手番の順番（スートの決定に使う）。</param>
+        /// <param name="name">あがったプレイヤーの表示名（自分なら「あなた」）。</param>
+        /// <param name="rank">確定した順位（四隅にも表示する）。</param>
+        /// <param name="isHuman">自分があがったか（大きく、長めに止める）。</param>
+        /// <param name="onCenter">中央で止まった瞬間に、紙幣の RectTransform を渡して呼ばれる。</param>
+        public IEnumerator PlayFinish(int orderNumber, string name, int rank, bool isHuman, Action<RectTransform> onCenter)
+        {
+            if (_playing != null)
+            {
+                StopCoroutine(_playing);
+                _playing = null;
+            }
+            if (_note != null)
+            {
+                Destroy(_note.gameObject);
+            }
+
+            _note = BuildNote(new NoteStyle
+            {
+                Size = isHuman ? _finishHumanSize : _finishCpuSize,
+                Paper = _finishPaperColor,
+                Frame = _finishFrameColor,
+                Ink = _finishInkColor,
+                BoldFrame = true,
+                CornerLabel = rank.ToString(),
+                SuitIndex = SuitIndexOf(orderNumber),
+                Message = $"<size=70%>{name}</size>\n{rank}位あがり！"
+            });
+            yield return Animate(_note, isHuman ? _finishHumanHoldSeconds : _finishCpuHoldSeconds, onCenter);
+        }
+
+        private static int SuitIndexOf(int orderNumber)
+        {
+            return (Mathf.Max(1, orderNumber) - 1) % Suits.Length;
+        }
+
+        private IEnumerator Animate(RectTransform note, float holdSeconds, Action<RectTransform> onCenter)
         {
             float canvasWidth = ((RectTransform)transform).rect.width;
             float offscreen = canvasWidth / 2f + note.sizeDelta.x / 2f + 40f;
@@ -111,6 +191,7 @@ namespace LuckyTrash.UI
                 yield return null;
             }
             Place(note, 0f, 0f);
+            onCenter?.Invoke(note);
 
             if (holdSeconds > 0f)
             {
@@ -146,14 +227,17 @@ namespace LuckyTrash.UI
         // 紙幣の組み立て
         // ------------------------------------------------------------------
 
-        private RectTransform BuildNote(int orderNumber, string message, bool isHuman)
+        private RectTransform BuildNote(NoteStyle style)
         {
-            Vector2 size = isHuman ? _humanSize : _cpuSize;
+            Vector2 size = style.Size;
             float s = size.y / 230f; // 文字や線の太さを紙幣の大きさに比例させるための倍率
-            int suitIndex = (Mathf.Max(1, orderNumber) - 1) % Suits.Length;
+            int suitIndex = style.SuitIndex;
             Color suitColor = suitIndex == 1 || suitIndex == 2 ? _suitRedColor : _suitBlackColor;
-            Color frameColor = isHuman ? _goldColor : _inkColor;
-            string orderLabel = $"{orderNumber}P";
+            Color frameColor = style.Frame;
+            Color inkColor = style.Ink;
+            Color paperColor = style.Paper;
+            string orderLabel = style.CornerLabel;
+            string message = style.Message;
 
             var note = new GameObject("Banknote", typeof(RectTransform)).GetComponent<RectTransform>();
             note.SetParent(transform, false);
@@ -168,17 +252,17 @@ namespace LuckyTrash.UI
             shadow.rectTransform.anchoredPosition = new Vector2(6f * s, -8f * s);
             shadow.pixelsPerUnitMultiplier = 3f;
 
-            var paper = CreateImage("Paper", note, _roundedSprite, _paperColor);
+            var paper = CreateImage("Paper", note, _roundedSprite, paperColor);
             Stretch(paper.rectTransform, 0f);
             paper.pixelsPerUnitMultiplier = 3f;
             var paperEdge = paper.gameObject.AddComponent<Outline>();
             paperEdge.effectColor = frameColor;
-            paperEdge.effectDistance = Vector2.one * (isHuman ? 3f : 1.5f) * s * new Vector2(1f, -1f);
+            paperEdge.effectDistance = Vector2.one * (style.BoldFrame ? 3f : 1.5f) * s * new Vector2(1f, -1f);
 
             // 地の細かい横線（紙幣らしい細かさ）。
             for (float y = 18f * s; y < size.y - 18f * s; y += 6f * s)
             {
-                var line = CreateImage("Hatch", note, null, new Color(_inkColor.r, _inkColor.g, _inkColor.b, 0.06f));
+                var line = CreateImage("Hatch", note, null, new Color(inkColor.r, inkColor.g, inkColor.b, 0.06f));
                 var r = line.rectTransform;
                 r.anchorMin = new Vector2(0f, 0f);
                 r.anchorMax = new Vector2(1f, 0f);
@@ -188,8 +272,8 @@ namespace LuckyTrash.UI
 
             // 縁の模様: 細い線の枠を三重に重ねる（自分の番は一番外側を金色に）。
             FrameLines(note, 7f * s, 2.5f * s, frameColor);
-            FrameLines(note, 12f * s, 1f * s, _inkColor);
-            FrameLines(note, 15f * s, 1f * s, new Color(_inkColor.r, _inkColor.g, _inkColor.b, 0.6f));
+            FrameLines(note, 12f * s, 1f * s, inkColor);
+            FrameLines(note, 15f * s, 1f * s, new Color(inkColor.r, inkColor.g, inkColor.b, 0.6f));
 
             // 四隅: 菱形の飾りと、額面のように手番の順番。
             Vector2[] corners = { new Vector2(-1f, 1f), new Vector2(1f, 1f), new Vector2(-1f, -1f), new Vector2(1f, -1f) };
@@ -197,13 +281,13 @@ namespace LuckyTrash.UI
             {
                 Vector2 pos = new Vector2(c.x * (size.x / 2f - 40f * s), c.y * (size.y / 2f - 36f * s));
 
-                var medal = CreateImage("CornerMedal", note, _circleSprite, _paperColor);
+                var medal = CreateImage("CornerMedal", note, _circleSprite, paperColor);
                 Center(medal.rectTransform, pos, Vector2.one * 46f * s);
                 var medalEdge = medal.gameObject.AddComponent<Outline>();
                 medalEdge.effectColor = frameColor;
                 medalEdge.effectDistance = new Vector2(1.5f, -1.5f) * s;
 
-                var label = CreateText("CornerOrder", note, _symbolFont, orderLabel, 20f * s, _inkColor);
+                var label = CreateText("CornerOrder", note, _symbolFont, orderLabel, 20f * s, inkColor);
                 label.fontStyle = FontStyles.Bold;
                 Center(label.rectTransform, pos, Vector2.one * 46f * s);
 
@@ -213,7 +297,7 @@ namespace LuckyTrash.UI
             }
 
             // 上部中央の銀行名。
-            var bank = CreateText("BankName", note, _symbolFont, "LUCKY TRASH BANK", 16f * s, _inkColor);
+            var bank = CreateText("BankName", note, _symbolFont, "LUCKY TRASH BANK", 16f * s, inkColor);
             bank.fontStyle = FontStyles.Bold;
             bank.characterSpacing = 12f;
             Center(bank.rectTransform, new Vector2(0f, size.y / 2f - 30f * s), new Vector2(size.x * 0.6f, 24f * s));
@@ -222,11 +306,11 @@ namespace LuckyTrash.UI
             Vector2 ovalPos = new Vector2(-size.x * 0.22f, -6f * s);
             var ovalOuter = CreateImage("OvalFrame", note, _circleSprite, frameColor);
             Center(ovalOuter.rectTransform, ovalPos, new Vector2(118f, 150f) * s);
-            var ovalRing = CreateImage("OvalRing", note, _circleSprite, _paperColor);
+            var ovalRing = CreateImage("OvalRing", note, _circleSprite, paperColor);
             Center(ovalRing.rectTransform, ovalPos, new Vector2(110f, 142f) * s);
-            var ovalInner = CreateImage("OvalInner", note, _circleSprite, new Color(_inkColor.r, _inkColor.g, _inkColor.b, 0.55f));
+            var ovalInner = CreateImage("OvalInner", note, _circleSprite, new Color(inkColor.r, inkColor.g, inkColor.b, 0.55f));
             Center(ovalInner.rectTransform, ovalPos, new Vector2(102f, 134f) * s);
-            var ovalField = CreateImage("OvalField", note, _circleSprite, Color.Lerp(_paperColor, Color.white, 0.45f));
+            var ovalField = CreateImage("OvalField", note, _circleSprite, Color.Lerp(paperColor, Color.white, 0.45f));
             Center(ovalField.rectTransform, ovalPos, new Vector2(98f, 130f) * s);
 
             var suit = CreateText("Suit", note, _symbolFont, Suits[suitIndex], 86f * s, suitColor);
@@ -235,17 +319,20 @@ namespace LuckyTrash.UI
             // 楕円の横に「〇〇の番です」。
             float textLeft = ovalPos.x + 70f * s;
             float textRight = size.x / 2f - 30f * s;
-            var text = CreateText("Message", note, _textFont, message, 40f * s, _inkColor);
+            var text = CreateText("Message", note, _textFont, message, 40f * s, inkColor);
             text.fontStyle = FontStyles.Bold;
             text.enableAutoSizing = true;
             text.fontSizeMin = 18f * s;
             text.fontSizeMax = 40f * s;
             text.overflowMode = TextOverflowModes.Ellipsis;
-            Center(text.rectTransform, new Vector2((textLeft + textRight) / 2f, -4f * s), new Vector2(textRight - textLeft, 64f * s));
+            // 2行（名前＋「○位あがり！」）のときは、文字の領域を縦に広げる。
+            bool twoLines = message.Contains("\n");
+            float textHeight = (twoLines ? 104f : 64f) * s;
+            Center(text.rectTransform, new Vector2((textLeft + textRight) / 2f, -4f * s), new Vector2(textRight - textLeft, textHeight));
 
             // 文字の下の飾り線。
             var rule = CreateImage("Rule", note, null, new Color(frameColor.r, frameColor.g, frameColor.b, 0.8f));
-            Center(rule.rectTransform, new Vector2((textLeft + textRight) / 2f, -40f * s), new Vector2((textRight - textLeft) * 0.8f, 1.5f * s));
+            Center(rule.rectTransform, new Vector2((textLeft + textRight) / 2f, -4f * s - textHeight / 2f - 4f * s), new Vector2((textRight - textLeft) * 0.8f, 1.5f * s));
 
             return note;
         }
