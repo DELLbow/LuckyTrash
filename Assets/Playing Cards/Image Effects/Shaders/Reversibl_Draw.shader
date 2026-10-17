@@ -46,6 +46,9 @@
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            // PC（Forward+）でも追加ライト（テーブルのスポットライト）を受けられるように。Light Layers にも対応する。
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile _ _LIGHT_LAYERS
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -118,6 +121,8 @@
                 inputData.viewDirectionWS = normalize(GetCameraPositionWS() - input.positionWS);
                 inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 inputData.fogCoord = ComputeFogFactor(input.positionCS.z);
+                // Forward+ のライトの割り当て（クラスタ）を引くのに、画面上の位置が必要。
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
 
                 half4 color = UniversalFragmentPBR(inputData, surfaceData);
 

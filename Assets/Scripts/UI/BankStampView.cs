@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using LuckyTrash.UI.Scoring;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -85,26 +86,61 @@ namespace LuckyTrash.UI
         [Range(0f, 1f)]
         [SerializeField] private float _shadowAlpha = 0.3f;
 
+        [Header("ボーナス")]
+        [Tooltip("ミラクルトラッシュのときのスタンプのインク（金色）。")]
+        [SerializeField] private Color _miracleInkColor = new Color(0.74f, 0.52f, 0.08f, 1f);
+        [Tooltip("ボーナスの行（スタンプの下に添える「ビッグトラッシュ！ +20」など）の文字の色。")]
+        [SerializeField] private Color _bonusLineColor = new Color(0.70f, 0.08f, 0.08f, 1f);
+        [Tooltip("ボーナスの行1行あたりの高さ（伝票はこの分だけ伸び、全体が上にずれる）。")]
+        [SerializeField] private float _bonusLineHeight = 40f;
+        [Tooltip("スタンプとボーナスの行の間のすき間（スタンプが傾いても、枠の角が行にかからない広さ）。")]
+        [SerializeField] private float _bonusLineGap = 26f;
+        [Tooltip("ボーナスがあるとき、押したまま見せておく時間をどれだけ延ばすか（秒）。")]
+        [SerializeField] private float _bonusExtraHoldSeconds = 0.3f;
+
         private RectTransform _root;
         private CanvasGroup _rootGroup;
         private RectTransform _slip;
         private CanvasGroup _slipGroup;
         private RectTransform _stamp;
         private CanvasGroup _stampGroup;
+        private CanvasGroup _bonusLinesGroup;
         // 縁取りで太くした文字のマテリアル（インクの色ごとに1つ作って使い回す）。
         private readonly Dictionary<Color, Material> _textMaterials = new Dictionary<Color, Material>();
 
         /// <summary>
         /// 伝票を出してスタンプを押し、見せてから消えるまで待つコルーチン。discardedCount が 0 ならノートラッシュの押し方になる。
+        /// bonuses があれば、スタンプの下にボーナス名と得点を1行ずつ添える（伝票はその分だけ伸び、見せる時間も少し延びる）。
+        /// ミラクルトラッシュのときは、スタンプを金色のインクにして「ミラクルトラッシュ！ +100」と押す。
         /// </summary>
-        public IEnumerator Play(int discardedCount, bool isHuman)
+        public IEnumerator Play(int discardedCount, bool isHuman, IReadOnlyList<BonusAward> bonuses = null)
         {
             bool hasTrash = discardedCount > 0;
-            Build(isHuman ? _humanSlipSize : _cpuSlipSize, isHuman ? _humanSize : _cpuSize,
-                hasTrash ? _trashInkColor : _noTrashInkColor, hasTrash, discardedCount);
+            BonusAward? miracle = null;
+            var lines = new List<string>();
+            if (bonuses != null)
+            {
+                foreach (var bonus in bonuses)
+                {
+                    if (bonus.Kind == BonusKind.MiracleTrash && miracle == null)
+                    {
+                        miracle = bonus;
+                    }
+                    else
+                    {
+                        lines.Add($"{bonus.Name}！ +{bonus.Points}");
+                    }
+                }
+            }
+            Color ink = miracle.HasValue ? _miracleInkColor : hasTrash ? _trashInkColor : _noTrashInkColor;
+            Build(isHuman ? _humanSlipSize : _cpuSlipSize, isHuman ? _humanSize : _cpuSize, ink, hasTrash, discardedCount, miracle, lines);
 
             float tilt = Random.Range(-_maxTiltDegrees, _maxTiltDegrees);
             float hold = isHuman ? _humanHoldSeconds : _cpuHoldSeconds;
+            if (miracle.HasValue || lines.Count > 0)
+            {
+                hold += _bonusExtraHoldSeconds;
+            }
             float startScale = hasTrash ? _trashStartScale : _noTrashStartScale;
 
             // 伝票がすっと出てきて、その直後にスタンプが大きく浮いた状態から一気に縮んで紙に当たる。
@@ -127,14 +163,22 @@ namespace LuckyTrash.UI
                 _stamp.localRotation = Quaternion.Euler(0f, 0f, tilt + (1f - t) * tilt * 0.6f);
                 float stampT = appear > slipEnter ? Mathf.Clamp01((elapsed - slipEnter) / (appear - slipEnter)) : (t >= 1f ? 1f : 0f);
                 _stampGroup.alpha = stampT;
+                if (_bonusLinesGroup != null)
+                {
+                    _bonusLinesGroup.alpha = stampT;
+                }
                 yield return null;
             }
             _slip.anchoredPosition = slipRest;
             _slipGroup.alpha = 1f;
             _stampGroup.alpha = 1f;
+            if (_bonusLinesGroup != null)
+            {
+                _bonusLinesGroup.alpha = 1f;
+            }
 
             // 押したまま見せる：最初の一瞬だけ跳ね返りと揺れ。ノートラッシュはこの間に伝票ごとゆっくりずり落ちる。
-            Vector2 restPosition = _centerOffset;
+            Vector2 restPosition = _root.anchoredPosition;
             float settle = Mathf.Min(0.18f, hold);
             elapsed = 0f;
             while (elapsed < hold)
@@ -192,18 +236,24 @@ namespace LuckyTrash.UI
             _textMaterials.Clear();
         }
 
-        private void Build(Vector2 slipSize, Vector2 stampSize, Color ink, bool hasTrash, int count)
+        private void Build(Vector2 slipSize, Vector2 stampSize, Color ink, bool hasTrash, int count,
+            BonusAward? miracle, IReadOnlyList<string> bonusLines)
         {
             if (_root != null)
             {
                 Destroy(_root.gameObject);
             }
 
+            // ボーナスの行の分だけ伝票を下に伸ばし、そのぶん全体を上へずらす（伝票の下端の位置は変えず、盤面を隠さない）。
+            float extra = bonusLines.Count > 0 ? bonusLines.Count * _bonusLineHeight + _bonusLineGap : 0f;
+            var fullSlip = new Vector2(slipSize.x, slipSize.y + extra);
+
             _root = CreateRect("Result", transform, Vector2.zero);
-            _root.anchoredPosition = _centerOffset;
+            _root.anchoredPosition = _centerOffset + Vector2.up * extra;
             _rootGroup = AddGroup(_root.gameObject);
 
-            BuildSlip(slipSize);
+            BuildSlip(fullSlip);
+            _slip.anchoredPosition = new Vector2(0f, -extra / 2f);
 
             // スタンプは伝票の見出しを避けて、少し下寄りに押す。
             _stamp = CreateRect("Stamp", _root, stampSize);
@@ -219,7 +269,14 @@ namespace LuckyTrash.UI
             AddFrame(_stamp, stampSize - Vector2.one * (outer + gap) * 2f, inner, ink, hasTrash ? 6 : 4);
 
             Vector2 innerSize = stampSize - Vector2.one * (outer + gap + inner) * 2f;
-            if (hasTrash)
+            if (miracle.HasValue)
+            {
+                AddText(_stamp, $"{miracle.Value.Name}！", ink, new Vector2(0f, innerSize.y * 0.15f),
+                    new Vector2(innerSize.x * 0.94f, innerSize.y * 0.6f), innerSize.y * 0.48f);
+                AddText(_stamp, $"+{miracle.Value.Points}", ink, new Vector2(0f, -innerSize.y * 0.30f),
+                    new Vector2(innerSize.x * 0.6f, innerSize.y * 0.36f), innerSize.y * 0.32f);
+            }
+            else if (hasTrash)
             {
                 AddText(_stamp, "トラッシュ！", ink, new Vector2(0f, innerSize.y * 0.15f),
                     new Vector2(innerSize.x * 0.94f, innerSize.y * 0.6f), innerSize.y * 0.48f);
@@ -230,6 +287,32 @@ namespace LuckyTrash.UI
             {
                 AddText(_stamp, "ノートラッシュ…", ink, Vector2.zero,
                     new Vector2(innerSize.x * 0.94f, innerSize.y * 0.7f), innerSize.y * 0.38f);
+            }
+
+            // ボーナスの行（伝票に水平に、スタンプの下へ1行ずつ。スタンプと一緒に現れる）。
+            if (bonusLines.Count > 0)
+            {
+                var linesRoot = CreateRect("BonusLines", _root, new Vector2(slipSize.x, bonusLines.Count * _bonusLineHeight));
+                linesRoot.anchoredPosition = new Vector2(0f, _stamp.anchoredPosition.y - stampSize.y / 2f - _bonusLineGap - bonusLines.Count * _bonusLineHeight / 2f);
+                var linesGroup = linesRoot.gameObject.AddComponent<CanvasGroup>();
+                linesGroup.blocksRaycasts = false;
+                linesGroup.interactable = false;
+                linesGroup.alpha = 0f;
+                _bonusLinesGroup = linesGroup;
+                for (int i = 0; i < bonusLines.Count; i++)
+                {
+                    var label = CreateText("Bonus", linesRoot, _textFont, bonusLines[i], _bonusLineHeight * 0.72f, _bonusLineColor,
+                        new Vector2(0f, (bonusLines.Count - 1) * _bonusLineHeight / 2f - i * _bonusLineHeight),
+                        new Vector2(slipSize.x * 0.86f, _bonusLineHeight));
+                    label.fontStyle = FontStyles.Bold;
+                    label.enableAutoSizing = true;
+                    label.fontSizeMin = _bonusLineHeight * 0.3f;
+                    label.fontSizeMax = _bonusLineHeight * 0.72f;
+                }
+            }
+            else
+            {
+                _bonusLinesGroup = null;
             }
         }
 

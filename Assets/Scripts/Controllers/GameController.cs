@@ -6,6 +6,7 @@ using System.Text;
 using LuckyTrash.Cards;
 using LuckyTrash.Game;
 using LuckyTrash.UI;
+using LuckyTrash.UI.Scoring;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -86,6 +87,12 @@ namespace LuckyTrash.Controllers
         [Header("Finish Celebration")]
         [Tooltip("あがりの金の紙幣が中央で止まった瞬間に、小さな紙幣をはじけさせる演出。")]
         [SerializeField] private MoneyBurstView _moneyBurst;
+        [Tooltip("背景のカジノのフロア。あがりの金の紙幣が中央で止まった瞬間に、スロットマシンの光を一斉に光らせる（任意）。")]
+        [SerializeField] private CasinoBackgroundView _casinoBackground;
+
+        [Header("Score")]
+        [Tooltip("得点のルール（順位の得点とボーナス）。Assets/Settings/ScoreRules.asset。")]
+        [SerializeField] private ScoreRulesAsset _scoreRules;
         [Tooltip("ONの場合のみ、以前の黄色い「〇位あがり!」の表示（結果ポップアップ）を出す。通常は金の紙幣で発表する。")]
         [SerializeField] private bool _showFinishMessagePopup = false;
 
@@ -143,6 +150,14 @@ namespace LuckyTrash.Controllers
         private TurnPhase _turnPhase;
         private bool _isHumanTurn;
 
+        // 「もう一度プレイ」で始まった勝負なら true（通算の得点を持ち越す）。タイトルや人数選択から始めたら false（リセット）。
+        private bool _continueScoreSession;
+        // 直近の勝負の得点の明細（勝負が終わったときに作る）。
+        private MatchSummary _lastMatchSummary;
+
+        /// <summary>直近の勝負の得点の明細（勝負が終わるまでは null）。</summary>
+        public MatchSummary LastMatchSummary => _lastMatchSummary;
+
         // 両アクション完了後に GameState.ResolveTurn() へ渡すための、確定済みの抽選結果。
         private RouletteCategory _pendingCategory;
         private Card _pendingDrawnCard;
@@ -194,6 +209,7 @@ namespace LuckyTrash.Controllers
             {
                 // ResultScene の「もう一度プレイ」から戻ってきた場合: 人数選択を経ずにそのまま開始する。
                 ShowPlayerCountPanel(false);
+                _continueScoreSession = true;
                 OnPlayerCountSelected(quickRestartPlayerCount);
             }
             else
@@ -261,6 +277,15 @@ namespace LuckyTrash.Controllers
 
             BuildNameplates(startingSeatIndex);
             _discardPile?.Sync(_gameState.DiscardPile);
+
+            // 得点：続けて遊ぶ（もう一度プレイ）なら通算を持ち越し、そうでなければ（または人数が変わったら）リセットする。
+            var scoreBook = ScoreSession.Book;
+            if (_scoreRules != null)
+            {
+                scoreBook.Rules = _scoreRules.Rules;
+            }
+            scoreBook.BeginMatch(playerCount, _gameState.Players.Select(p => p.SeatIndex), _continueScoreSession);
+            _continueScoreSession = false;
 
             SetStatusText($"ゲーム開始（{playerCount}人）。{GetDisplayName(_gameState.CurrentPlayer)} から開始します{startReason}。");
 
@@ -426,6 +451,8 @@ namespace LuckyTrash.Controllers
             var handBefore = _gameState.CurrentPlayer.Hand.ToList();
             var result = _gameState.ResolveTurn(_pendingCategory, _pendingDrawnCard, _pendingFlipDeckWasReconstituted);
             bool useNewResult = !_useLegacyResultPopup && _discardPile != null && _bankStamp != null;
+            // 運の良い出来事のボーナス（ターンの結果を読み取るだけで判定する）。
+            var bonuses = ScoreSession.Book.RecordTurn(result);
 
             if (!useNewResult)
             {
@@ -459,7 +486,7 @@ namespace LuckyTrash.Controllers
 
             if (useNewResult)
             {
-                yield return StartCoroutine(PlayTurnResult(result, handBefore));
+                yield return StartCoroutine(PlayTurnResult(result, handBefore, bonuses));
             }
             else if (_resultPopupView != null)
             {
@@ -490,6 +517,8 @@ namespace LuckyTrash.Controllers
                 // GameManagerへの記録はここで同期的に完了するため、演出5のズームアウトで
                 // 遷移を数秒遅らせても結果データの受け渡しには影響しない。
                 RecordGameResultForNextStart();
+                // 順位の得点とボーナスを通算に加える（明細はフェーズ2の結果表示で使う）。
+                _lastMatchSummary = ScoreSession.Book.FinishMatch(_gameState.Rankings.Select(p => p.SeatIndex).ToList());
 
                 // 演出5: シーン遷移前にテーブル全体を見せるズームアウト（waitForCameraArrivalの
                 // 設定に関わらず、常に最後まで見せてから遷移する）。
@@ -510,7 +539,7 @@ namespace LuckyTrash.Controllers
         /// トラッシュなら捨てるカードが金色に光って浮き（CPUのカードは表にめくれ）、基準カードと一緒に捨て札の山へ飛ぶ。
         /// ノートラッシュなら手札がぶるっと震え、基準カードだけが捨て札の山へ飛ぶ。両方が終わるまで待つ。
         /// </summary>
-        private IEnumerator PlayTurnResult(TurnResult result, IReadOnlyList<Card> handBefore)
+        private IEnumerator PlayTurnResult(TurnResult result, IReadOnlyList<Card> handBefore, IReadOnlyList<BonusAward> bonuses)
         {
             var player = result.TurnPlayer;
             var handView = GetHandView(player.SeatIndex);
@@ -530,7 +559,12 @@ namespace LuckyTrash.Controllers
             // 山の見た目は、まだ飛んでいない基準カードと捨て札を除いた分に合わせておく（着地ごとに1枚ずつ積む）。
             _discardPile.Sync(_gameState.DiscardPile, excludeTop: 1 + discardedCount);
 
-            var stamp = StartCoroutine(_bankStamp.Play(discardedCount, player.IsHuman));
+            var stamp = StartCoroutine(_bankStamp.Play(discardedCount, player.IsHuman, bonuses));
+            // ミラクルトラッシュのときは、背景のスロットマシンを一斉に光らせる（あがりのときと同じ大当たりの演出）。
+            if (_casinoBackground != null && bonuses != null && bonuses.Any(b => b.Kind == BonusKind.MiracleTrash))
+            {
+                _casinoBackground.PlayJackpot();
+            }
 
             var indices = DiscardTargets.GetIndices(handBefore, result.DiscardedCards);
             var flyingViews = handView != null ? handView.DetachCardViews(indices) : new List<Card3DView>();
@@ -736,6 +770,10 @@ namespace LuckyTrash.Controllers
                 if (_moneyBurst != null)
                 {
                     _moneyBurst.Play(note.position, note.sizeDelta, finished.IsHuman, rank == 1);
+                }
+                if (_casinoBackground != null)
+                {
+                    _casinoBackground.PlayJackpot();
                 }
                 if (_nameplateBar != null && rank > 0)
                 {
